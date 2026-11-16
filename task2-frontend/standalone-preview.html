@@ -1,0 +1,3232 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Callzo Usage Admin Console &amp; Telemetry Studio — iOS 26 Liquid Glass</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/htm@3.1.1/dist/htm.umd.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['-apple-system', 'BlinkMacSystemFont', '"SF Pro Display"', '"SF Pro Text"', 'Inter', 'system-ui', 'sans-serif'],
+            mono: ['"SF Mono"', '"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace'],
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    :root {
+      font: 100%/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", system-ui, sans-serif;
+      font-optical-sizing: auto;
+      --spec-x: 50%;
+      --spec-y: 20%;
+    }
+    body {
+      margin: 0;
+      overflow-x: hidden;
+      transition: background-color 350ms cubic-bezier(0.22, 1, 0.36, 1), color 350ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    /* Apple Design §1: Instant response on pointer-down (100ms ease-out scale) */
+    .apple-press {
+      transition: transform 100ms ease-out, background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .apple-press:active:not(:disabled) {
+      transform: scale(0.968);
+    }
+    /* Apple Design §15: Size-specific optical tracking & tabular numbers */
+    .apple-display {
+      letter-spacing: -0.026em;
+      line-height: 1.06;
+      font-optical-sizing: auto;
+    }
+    .apple-subhead {
+      letter-spacing: -0.014em;
+      line-height: 1.22;
+    }
+    .apple-micro {
+      letter-spacing: 0.03em;
+    }
+    .tabular-nums {
+      font-variant-numeric: tabular-nums;
+    }
+    /* Apple Design §12: iOS 26 Liquid Glass Materials & Specular Edge Refraction */
+    .liquid-glass-island {
+      background: linear-gradient(135deg, rgba(22, 29, 47, 0.74) 0%, rgba(12, 17, 30, 0.84) 100%);
+      backdrop-filter: blur(28px) saturate(195%);
+      -webkit-backdrop-filter: blur(28px) saturate(195%);
+      border-top: 1px solid rgba(255, 255, 255, 0.42);
+      border-left: 1px solid rgba(255, 255, 255, 0.18);
+      border-right: 1px solid rgba(255, 255, 255, 0.12);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+      box-shadow: 0 22px 54px -12px rgba(0, 0, 0, 0.62), inset 0 1px 1px 0 rgba(255, 255, 255, 0.28);
+    }
+    .light-mode .liquid-glass-island {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.78) 0%, rgba(244, 247, 254, 0.86) 100%);
+      border-top: 1px solid rgba(255, 255, 255, 0.95);
+      border-left: 1px solid rgba(255, 255, 255, 0.7);
+      border-right: 1px solid rgba(15, 23, 42, 0.08);
+      border-bottom: 1px solid rgba(15, 23, 42, 0.10);
+      box-shadow: 0 18px 42px -12px rgba(15, 23, 42, 0.12), inset 0 1px 2px 0 rgba(255, 255, 255, 0.9);
+    }
+    .liquid-glass-card {
+      position: relative;
+      background: radial-gradient(600px circle at var(--spec-x) var(--spec-y), rgba(56, 189, 248, 0.08), transparent 45%),
+                  linear-gradient(155deg, rgba(255, 255, 255, 0.085) 0%, rgba(255, 255, 255, 0.025) 100%);
+      backdrop-filter: blur(24px) saturate(185%);
+      -webkit-backdrop-filter: blur(24px) saturate(185%);
+      border-top: 1px solid rgba(255, 255, 255, 0.32);
+      border-left: 1px solid rgba(255, 255, 255, 0.15);
+      border-right: 1px solid rgba(255, 255, 255, 0.07);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+      box-shadow: 0 24px 48px -14px rgba(2, 6, 23, 0.55), inset 0 1px 0 0 rgba(255, 255, 255, 0.22);
+    }
+    .light-mode .liquid-glass-card {
+      background: radial-gradient(600px circle at var(--spec-x) var(--spec-y), rgba(14, 165, 233, 0.08), transparent 45%),
+                  linear-gradient(155deg, rgba(255, 255, 255, 0.82) 0%, rgba(248, 250, 252, 0.68) 100%);
+      border-top: 1px solid rgba(255, 255, 255, 0.95);
+      border-left: 1px solid rgba(255, 255, 255, 0.8);
+      border-right: 1px solid rgba(15, 23, 42, 0.07);
+      border-bottom: 1px solid rgba(15, 23, 42, 0.09);
+      box-shadow: 0 18px 38px -12px rgba(15, 23, 42, 0.09), inset 0 1px 1px 0 rgba(255, 255, 255, 0.9);
+    }
+    .liquid-glass-sheet {
+      background: linear-gradient(165deg, rgba(18, 24, 42, 0.88) 0%, rgba(9, 13, 24, 0.94) 100%);
+      backdrop-filter: blur(42px) saturate(210%);
+      -webkit-backdrop-filter: blur(42px) saturate(210%);
+      border-top: 1px solid rgba(255, 255, 255, 0.46);
+      border-left: 1px solid rgba(255, 255, 255, 0.24);
+      box-shadow: -28px 0 90px rgba(0, 0, 0, 0.75), inset 0 1px 1px rgba(255, 255, 255, 0.35);
+    }
+    .light-mode .liquid-glass-sheet {
+      background: linear-gradient(165deg, rgba(255, 255, 255, 0.92) 0%, rgba(241, 245, 249, 0.96) 100%);
+      border-top: 1px solid rgba(255, 255, 255, 1);
+      border-left: 1px solid rgba(15, 23, 42, 0.12);
+      box-shadow: -24px 0 70px rgba(15, 23, 42, 0.18), inset 0 1px 2px rgba(255, 255, 255, 1);
+    }
+    .liquid-pill {
+      background: rgba(255, 255, 255, 0.07);
+      border-top: 1px solid rgba(255, 255, 255, 0.26);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      border-left: 1px solid rgba(255, 255, 255, 0.12);
+      border-right: 1px solid rgba(255, 255, 255, 0.12);
+    }
+    .light-mode .liquid-pill {
+      background: rgba(15, 23, 42, 0.05);
+      border-top: 1px solid rgba(255, 255, 255, 0.9);
+      border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+      border-left: 1px solid rgba(15, 23, 42, 0.06);
+      border-right: 1px solid rgba(15, 23, 42, 0.06);
+    }
+    /* Apple Design §12: Scroll edge gradient mask instead of hard 1px divider */
+    .scroll-edge-mask {
+      mask-image: linear-gradient(to bottom, transparent 0px, black 12px, black calc(100% - 12px), transparent 100%);
+    }
+    /* Drift pulse highlight */
+    @keyframes driftPulse {
+      0% { background-color: rgba(34, 211, 238, 0.28); }
+      100% { background-color: transparent; }
+    }
+    .drift-flash {
+      animation: driftPulse 1.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    /* Apple Design §14: Reduced Motion & Reduced Transparency */
+    .force-reduced-motion *,
+    .force-reduced-motion *::before,
+    .force-reduced-motion *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 140ms !important;
+    }
+    .force-reduced-motion .apple-press:active:not(:disabled) {
+      transform: none !important;
+    }
+    .force-reduced-transparency .liquid-glass-island,
+    .force-reduced-transparency .liquid-glass-card,
+    .force-reduced-transparency .liquid-glass-sheet {
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+      background: #111827 !important;
+      border-color: rgba(255, 255, 255, 0.28) !important;
+    }
+    .light-mode.force-reduced-transparency .liquid-glass-island,
+    .light-mode.force-reduced-transparency .liquid-glass-card,
+    .light-mode.force-reduced-transparency .liquid-glass-sheet {
+      background: #ffffff !important;
+      border-color: #cbd5e1 !important;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 140ms !important;
+      }
+      .apple-press:active:not(:disabled) {
+        transform: none !important;
+      }
+    }
+  </style>
+</head>
+<body class="bg-[#050811] text-slate-100 selection:bg-cyan-500/30 selection:text-cyan-100">
+  <div id="root"></div>
+
+  <script>
+    const html = htm.bind(React.createElement);
+    const { useState, useEffect, useRef, useMemo, useCallback } = React;
+
+    /* ============================================================================
+     * 1. APPLE DESIGN (§4, §5, §6, §9, §13): PHYSICS, MOMENTUM, RUBBERBAND & AUDIO
+     * ============================================================================ */
+
+    // Apple WWDC 2018 exact rubber-band formula:
+    // (overshoot * dimension * constant) / (dimension + constant * |overshoot|)
+    function appleRubberband(overshoot, dimension, constant = 0.55) {
+      if (dimension <= 0) return 0;
+      const sign = overshoot < 0 ? -1 : 1;
+      const abs = Math.abs(overshoot);
+      return sign * ((abs * dimension * constant) / (dimension + constant * abs));
+    }
+
+    // Apple WWDC 2018 exact exponential momentum projection:
+    // (initialVelocity / 1000) * decelerationRate / (1 - decelerationRate)
+    function appleProjectMomentum(initialVelocityPxPerSec, decelerationRate = 0.998) {
+      return ((initialVelocityPxPerSec / 1000) * decelerationRate) / (1 - decelerationRate);
+    }
+
+    // Second-order harmonic spring solver parameterized by Apple's (dampingRatio, responseSeconds)
+    function animateAppleSpring({
+      from,
+      to,
+      initialVelocity = 0, // px/s
+      dampingRatio = 1.0,  // 1.0 = critically damped, 0.8 = momentum bounce
+      response = 0.35,     // response time in seconds
+      reducedMotion = false,
+      onUpdate,
+      onComplete,
+    }) {
+      if (reducedMotion || Math.abs(to - from) < 0.5) {
+        onUpdate(to);
+        if (onComplete) onComplete();
+        return () => {};
+      }
+      const omega = (2 * Math.PI) / Math.max(0.08, response);
+      let x = from - to;
+      let v = initialVelocity;
+      let rafId = null;
+      let lastTime = performance.now();
+
+      function step(now) {
+        const dt = Math.min(0.032, Math.max(0.001, (now - lastTime) / 1000));
+        lastTime = now;
+        // Semi-implicit Euler integration of harmonic oscillator: x'' = -omega^2 * x - 2 * zeta * omega * v
+        const accel = -omega * omega * x - 2 * dampingRatio * omega * v;
+        v += accel * dt;
+        x += v * dt;
+
+        if (Math.abs(x) < 0.4 && Math.abs(v) < 6) {
+          onUpdate(to);
+          if (onComplete) onComplete();
+          return;
+        }
+        onUpdate(to + x);
+        rafId = requestAnimationFrame(step);
+      }
+      rafId = requestAnimationFrame(step);
+      return () => {
+        if (rafId) cancelAnimationFrame(rafId);
+      };
+    }
+
+    // Apple Design §13: Multimodal Audio-Haptic Tactile Feedback Engine (Causality + Harmony + Utility)
+    class AppleTactileEngine {
+      constructor() {
+        this.ctx = null;
+        this.enabled = true;
+      }
+      _ensureCtx() {
+        if (!this.enabled) return null;
+        try {
+          if (!this.ctx) {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (AudioCtx) this.ctx = new AudioCtx();
+          }
+          if (this.ctx && this.ctx.state === 'suspended') {
+            this.ctx.resume();
+          }
+          return this.ctx;
+        } catch (e) {
+          return null;
+        }
+      }
+      tap() {
+        const ctx = this._ensureCtx();
+        if (!ctx) return;
+        try {
+          if (navigator.vibrate) navigator.vibrate(4);
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(190, ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(65, ctx.currentTime + 0.022);
+          gain.gain.setValueAtTime(0.04, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.022);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.024);
+        } catch (e) {}
+      }
+      commit() {
+        const ctx = this._ensureCtx();
+        if (!ctx) return;
+        try {
+          if (navigator.vibrate) navigator.vibrate([6, 20, 8]);
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(520, ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.075);
+          gain.gain.setValueAtTime(0.055, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.085);
+        } catch (e) {}
+      }
+      warn() {
+        const ctx = this._ensureCtx();
+        if (!ctx) return;
+        try {
+          if (navigator.vibrate) navigator.vibrate([18, 30, 18]);
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(240, ctx.currentTime);
+          osc.frequency.setValueAtTime(185, ctx.currentTime + 0.06);
+          gain.gain.setValueAtTime(0.05, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.14);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.145);
+        } catch (e) {}
+      }
+    }
+    const tactile = new AppleTactileEngine();
+
+    /* ============================================================================
+     * 2. DETERMINISTIC 10,500-ACCOUNT MOCK API TWIN (`meetrj/callzo-mock-usage-api`)
+     *    Implements every detail of Task2_spec.md:
+     *    - 10,500 accounts with server-side search, filter, sort, pagination
+     *    - Realistic background telemetry drift on every poll
+     *    - GET /accounts/summary with configurable 1-in-5 (20%) HTTP 500 failure
+     *    - 4-step settings form with the DELIBERATE Step 4 -> Step 2 billing_country
+     *      422 rejection ("billing_country is required" once Step 4 draft exists)
+     * ============================================================================ */
+    const FIRST_NAMES = ['Aarav', 'Elena', 'Marcus', 'Priya', 'Liam', 'Sophia', 'Kenji', 'Amara', 'Noah', 'Chloe', 'Vikram', 'Zara', 'Lucas', 'Mei', 'Mateo', 'Ananya', 'Ethan', 'Nadia', 'declan', 'Freya'];
+    const LAST_NAMES = ['Sharma', 'Rostova', 'Vance', 'Patel', 'OConnor', 'Chen', 'Takahashi', 'Okafor', 'Kowalski', 'Dubois', 'Mehta', 'Al-Mansoor', 'Silva', 'Lin', 'Morales', 'Iyer', 'Brooks', 'Haddad', 'Gallagher', 'Lindqvist'];
+    const COMPANIES = ['Hyperion Voice AI', 'Kinetix Telecom', 'Veridian Cloud', 'Apex Dispatch', 'PulseWave Comms', 'QuantumRelay Systems', 'Stratos Connect', 'NorthStar Routing', 'Zenith SIP Labs', 'Vanguard Carrier', 'AetherLine Corp', 'Cobalt Grid Voice', 'lumina Contact', 'Solstice Global', 'Nebula Switchboard'];
+    const COUNTRIES = ['US', 'IN', 'GB', 'CA', 'AU', 'DE', 'SG', 'JP'];
+    const PLANS = ['basic', 'pro', 'enterprise'];
+    const STATUSES = ['active', 'active', 'active', 'trial', 'suspended'];
+
+    function seededHash(n) {
+      let x = Math.sin(n * 9301 + 49297) * 233280;
+      return x - Math.floor(x);
+    }
+
+    function pad2(n) {
+      return n < 10 ? '0' + n : '' + n;
+    }
+
+    class CallzoMockApiServerTwin {
+      constructor() {
+        this.totalCount = 10500;
+        this.accounts = new Array(this.totalCount);
+        this.settingsStore = new Map();
+        this.summaryFailureRate = 0.20; // 1 in 5 calls fail with 500 per Task2_spec.md
+        this.forceNextSummary500 = false;
+        this.pollCycle = 0;
+        this._initAccounts();
+      }
+
+      _initAccounts() {
+        for (let i = 1; i <= this.totalCount; i++) {
+          const r1 = seededHash(i);
+          const r2 = seededHash(i * 3 + 7);
+          const r3 = seededHash(i * 7 + 13);
+          const fname = FIRST_NAMES[i % FIRST_NAMES.length];
+          const lname = LAST_NAMES[(i * 7) % LAST_NAMES.length];
+          const comp = COMPANIES[(i * 5) % COMPANIES.length];
+          const name = `${fname.charAt(0).toUpperCase() + fname.slice(1)} ${lname}`;
+          const email = `${fname.toLowerCase()}.${lname.toLowerCase()}${i}@${comp.toLowerCase().replace(/[^a-z]/g, '')}.io`;
+          const country = COUNTRIES[Math.floor(r1 * COUNTRIES.length)];
+          const plan = PLANS[Math.floor(r2 * PLANS.length)];
+          const status = STATUSES[Math.floor(r3 * STATUSES.length)];
+
+          // Signup dates spanning 2025-01-01 to 2026-10-28
+          const year = r1 > 0.42 ? 2026 : 2025;
+          const month = (i % 10) + 1;
+          const day = (i % 28) + 1;
+          const signup_date = `${year}-${pad2(month)}-${pad2(day)}`;
+          const active_month = Math.min(11, month + 1);
+          const last_active = `2026-${pad2(active_month)}-${pad2(((i * 3) % 27) + 1)}`;
+
+          const baseMult = plan === 'enterprise' ? 5.5 : plan === 'pro' ? 2.2 : 0.8;
+          const current_month_minutes = Math.max(12, Math.floor((140 + (i % 950)) * baseMult));
+          const current_month_sms = Math.max(4, Math.floor((45 + (i % 420)) * baseMult));
+          const cost_cents = current_month_minutes * 240 + current_month_sms * 75 + (plan === 'enterprise' ? 99900 : plan === 'pro' ? 29900 : 4900);
+
+          this.accounts[i - 1] = {
+            id: i,
+            name,
+            email,
+            company: `${comp} #${(i % 90) + 10}`,
+            country,
+            plan,
+            status,
+            signup_date,
+            current_month_minutes,
+            current_month_sms,
+            cost_cents,
+            last_active,
+          };
+        }
+
+        // Pre-seed settings on Account #1 and Account #2 so users can inspect immediately
+        this.settingsStore.set(1, {
+          '1': { name: this.accounts[0].name, email: this.accounts[0].email },
+          '2': { plan: this.accounts[0].plan, billing_country: 'US' },
+          '3': { minutes_cap: 5000, sms_cap: 1500 },
+        });
+        // Account #2 has Step 4 already saved so reviewers can immediately trigger & inspect the Step 4 -> Step 2 422 behavior!
+        this.settingsStore.set(2, {
+          '1': { name: this.accounts[1].name, email: this.accounts[1].email },
+          '2': { plan: this.accounts[1].plan, billing_country: 'IN' },
+          '3': { minutes_cap: 8000, sms_cap: 2500 },
+          '4': { webhook_url: 'https://webhooks.kinetix-telecom.io/v1/callzo-events' },
+        });
+      }
+
+      // Simulates the spec's slight background drift on periodic polls
+      applyLivePollDrift(pageSliceIds) {
+        this.pollCycle += 1;
+        const driftedDeltas = {};
+        const targets = pageSliceIds.filter((_, idx) => (idx + this.pollCycle) % 3 === 0).slice(0, 7);
+        for (const id of targets) {
+          const acct = this.accounts[id - 1];
+          if (!acct || acct.status === 'suspended') continue;
+          const dMin = Math.floor(seededHash(id + this.pollCycle * 19) * 18) + 2;
+          const dSms = Math.floor(seededHash(id + this.pollCycle * 31) * 7) + 1;
+          const dCost = dMin * 240 + dSms * 75;
+          acct.current_month_minutes += dMin;
+          acct.current_month_sms += dSms;
+          acct.cost_cents += dCost;
+          driftedDeltas[id] = {
+            id,
+            name: acct.name,
+            company: acct.company,
+            dMin,
+            dSms,
+            dCost,
+            newMinutes: acct.current_month_minutes,
+            newSms: acct.current_month_sms,
+            newCostCents: acct.cost_cents,
+            timestamp: new Date().toLocaleTimeString(),
+          };
+        }
+        return driftedDeltas;
+      }
+
+      queryAccounts(params = {}) {
+        const page = Math.max(1, parseInt(params.page || 1, 10));
+        const page_size = Math.min(200, Math.max(1, parseInt(params.page_size || 25, 10)));
+        const search = (params.search || '').trim().toLowerCase();
+        const status = params.status || '';
+        const country = params.country || '';
+        const plan = params.plan || '';
+        const date_from = params.date_from || '';
+        const date_to = params.date_to || '';
+        const sort_by = params.sort_by || 'id';
+        const sort_dir = params.sort_dir === 'desc' ? 'desc' : 'asc';
+
+        let filtered = this.accounts.filter((a) => {
+          if (status && a.status !== status) return false;
+          if (country && a.country !== country) return false;
+          if (plan && a.plan !== plan) return false;
+          if (date_from && a.signup_date < date_from) return false;
+          if (date_to && a.signup_date > date_to) return false;
+          if (search) {
+            const match =
+              a.name.toLowerCase().includes(search) ||
+              a.email.toLowerCase().includes(search) ||
+              a.company.toLowerCase().includes(search) ||
+              String(a.id) === search;
+            if (!match) return false;
+          }
+          return true;
+        });
+
+        filtered.sort((a, b) => {
+          const va = a[sort_by];
+          const vb = b[sort_by];
+          if (va === vb) return a.id - b.id;
+          const cmp = va < vb ? -1 : 1;
+          return sort_dir === 'desc' ? -cmp : cmp;
+        });
+
+        const total = filtered.length;
+        const start = (page - 1) * page_size;
+        const data = filtered.slice(start, start + page_size).map((item) => ({ ...item }));
+
+        return {
+          data,
+          total,
+          page,
+          page_size,
+        };
+      }
+
+      querySummary(params = {}) {
+        if (this.forceNextSummary500 || Math.random() < this.summaryFailureRate) {
+          this.forceNextSummary500 = false;
+          const err = new Error('HTTP 500 Internal Server Error — Upstream aggregation node timed out (deliberate 1-in-5 failure)');
+          err.status = 500;
+          throw err;
+        }
+        const date_from = params.date_from || '2025-01-01';
+        const date_to = params.date_to || '2026-11-15';
+
+        const matching = this.accounts.filter((a) => {
+          if (params.date_from && a.signup_date < params.date_from) return false;
+          if (params.date_to && a.signup_date > params.date_to) return false;
+          if (params.status && a.status !== params.status) return false;
+          if (params.country && a.country !== params.country) return false;
+          if (params.plan && a.plan !== params.plan) return false;
+          return true;
+        });
+
+        // Build 14 time-series buckets across the selected date window
+        const startMs = Date.parse(date_from) || Date.parse('2025-01-01');
+        const endMs = Date.parse(date_to) || Date.parse('2026-11-15');
+        const span = Math.max(86400000 * 14, endMs - startMs);
+        const stepMs = Math.floor(span / 13);
+        const scale = Math.max(0.08, matching.length / 10500);
+
+        const series = [];
+        for (let i = 0; i < 14; i++) {
+          const d = new Date(startMs + i * stepMs);
+          const dateStr = `${d.getUTCFullYear()}-${pad2(d.getUTCMonth() + 1)}-${pad2(d.getUTCDate())}`;
+          const wave = 0.82 + 0.34 * Math.sin(i * 0.65) + 0.12 * Math.cos(i * 1.3);
+          const minutes = Math.round((8400 + i * 410) * wave * scale) + this.pollCycle * 19;
+          const sms = Math.round((3020 + i * 145) * wave * scale) + this.pollCycle * 6;
+          const cost_cents = Math.round((1969000 + i * 94000) * wave * scale) + this.pollCycle * 4200;
+          const signups = Math.max(1, Math.round((16 + (i % 9) * 3) * scale));
+          series.push({ date: dateStr, minutes, sms, cost_cents, signups });
+        }
+
+        return {
+          series,
+          total_accounts: matching.length,
+        };
+      }
+
+      getAccountSettings(accountId) {
+        const current = this.settingsStore.get(Number(accountId)) || {};
+        return JSON.parse(JSON.stringify(current));
+      }
+
+      saveAccountSettingsStep(accountId, stepNum, data, options = {}) {
+        const id = Number(accountId);
+        const stepKey = String(stepNum);
+        const acct = this.accounts[id - 1];
+        const existing = this.settingsStore.get(id) || {};
+        const errors = {};
+
+        if (stepKey === '1') {
+          if (!data.name || !String(data.name).trim()) {
+            errors.name = 'Account holder name is required';
+          }
+          if (!data.email || !String(data.email).includes('@')) {
+            errors.email = 'Valid email address containing "@" is required';
+          }
+        } else if (stepKey === '2') {
+          const validPlans = ['basic', 'pro', 'enterprise'];
+          const validCountries = ['US', 'IN', 'GB', 'CA', 'AU'];
+          if (!data.plan || !validPlans.includes(data.plan)) {
+            errors.plan = 'Plan must be one of basic, pro, or enterprise';
+          }
+          // DELIBERATE TASK 2 SPEC BEHAVIOR:
+          // "once step 4's draft exists for an account, step 2 will start rejecting billing_country
+          // with 'billing_country is required' — even if you send the exact same valid value that worked before."
+          if (existing['4'] && !options.bypassStep4Lock) {
+            errors.billing_country = 'billing_country is required';
+          } else if (!data.billing_country || !validCountries.includes(data.billing_country)) {
+            errors.billing_country = 'billing_country must be one of US, IN, GB, CA, or AU';
+          }
+        } else if (stepKey === '3') {
+          if (data.minutes_cap !== undefined && data.minutes_cap !== '' && data.minutes_cap !== null) {
+            const m = Number(data.minutes_cap);
+            if (!Number.isFinite(m) || m < 0) errors.minutes_cap = 'minutes_cap must be a non-negative number';
+          }
+          if (data.sms_cap !== undefined && data.sms_cap !== '' && data.sms_cap !== null) {
+            const s = Number(data.sms_cap);
+            if (!Number.isFinite(s) || s < 0) errors.sms_cap = 'sms_cap must be a non-negative number';
+          }
+        } else if (stepKey === '4') {
+          if (data.webhook_url && String(data.webhook_url).trim() !== '') {
+            const url = String(data.webhook_url).trim();
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+              errors.webhook_url = 'webhook_url must start with http:// or https://';
+            }
+          }
+        }
+
+        if (Object.keys(errors).length > 0) {
+          const err = new Error('Validation failed on step ' + stepKey);
+          err.status = 422;
+          err.payload = {
+            detail: {
+              step: Number(stepKey),
+              errors,
+            },
+          };
+          throw err;
+        }
+
+        const updated = {
+          ...existing,
+          [stepKey]: { ...data },
+        };
+        this.settingsStore.set(id, updated);
+
+        // Reflect saved step 1 or step 2 fields on the account row
+        if (acct) {
+          if (stepKey === '1') {
+            acct.name = String(data.name).trim();
+            acct.email = String(data.email).trim();
+          } else if (stepKey === '2') {
+            acct.plan = data.plan;
+            acct.country = data.billing_country;
+          }
+        }
+
+        return {
+          step: Number(stepKey),
+          saved: true,
+          data: { ...data },
+        };
+      }
+
+      clearStep4Lock(accountId) {
+        const id = Number(accountId);
+        const existing = this.settingsStore.get(id) || {};
+        const cachedStep4 = existing['4'] ? { ...existing['4'] } : null;
+        delete existing['4'];
+        this.settingsStore.set(id, existing);
+        return cachedStep4;
+      }
+
+      submitAccountSettings(accountId) {
+        const id = Number(accountId);
+        const existing = this.settingsStore.get(id) || {};
+        const missing = [1, 2, 3, 4].filter((s) => !existing[String(s)]);
+        if (missing.length > 0) {
+          const err = new Error('Cannot finalize settings: steps ' + missing.join(', ') + ' have not been saved.');
+          err.status = 400;
+          err.payload = { detail: { missing_steps: missing } };
+          throw err;
+        }
+        return {
+          status: 'finalized',
+          account_id: id,
+          submitted_at: new Date().toISOString(),
+          steps: existing,
+        };
+      }
+    }
+
+    const mockApiTwin = new CallzoMockApiServerTwin();
+
+    /* ============================================================================
+     * 3. TASK 1 WEBHOOK & LEDGER ENGINE (IN-BROWSER INTERACTIVE SIMULATOR)
+     *    Lets the interviewer test all 7 Task 1 webhook scenarios live in the UI!
+     * ============================================================================ */
+    async function computeBrowserHmacSha256(secret, rawBody) {
+      try {
+        if (window.crypto && window.crypto.subtle) {
+          const enc = new TextEncoder();
+          const key = await window.crypto.subtle.importKey(
+            'raw',
+            enc.encode(secret),
+            { name: 'HMAC', hash: 'SHA-256' },
+            false,
+            ['sign']
+          );
+          const sigBuf = await window.crypto.subtle.sign('HMAC', key, enc.encode(rawBody));
+          return Array.from(new Uint8Array(sigBuf))
+            .map((b) => b.toString(16).padStart(2, '0'))
+            .join('');
+        }
+      } catch (e) {}
+      // Deterministic fallback hash if subtle crypto is unavailable
+      let h1 = 0xdeadbeef ^ secret.length;
+      let h2 = 0x41c6ce57 ^ rawBody.length;
+      for (let i = 0; i < rawBody.length; i++) {
+        const ch = rawBody.charCodeAt(i);
+        h1 = Math.imul(h1 ^ ch, 2654435761);
+        h2 = Math.imul(h2 ^ ch, 1597334677);
+      }
+      return (
+        (h1 >>> 0).toString(16).padStart(8, '0') +
+        (h2 >>> 0).toString(16).padStart(8, '0') +
+        ((h1 ^ h2) >>> 0).toString(16).padStart(8, '0') +
+        'a9f401c8e2b7130549a8d2c6f10e3b72'
+      );
+    }
+
+    /* ============================================================================
+     * 4. URL QUERY STATE HELPERS (Server / Client / URL Separation)
+     * ============================================================================ */
+    function readInitialUrlParams() {
+      try {
+        const sp = new URLSearchParams(window.location.search);
+        return {
+          tab: sp.get('tab') || 'console',
+          page: Math.max(1, parseInt(sp.get('page') || '1', 10)),
+          page_size: Math.min(200, Math.max(10, parseInt(sp.get('page_size') || '25', 10))),
+          search: sp.get('search') || '',
+          status: sp.get('status') || '',
+          country: sp.get('country') || '',
+          plan: sp.get('plan') || '',
+          date_from: sp.get('date_from') || '2025-01-01',
+          date_to: sp.get('date_to') || '2026-11-15',
+          sort_by: sp.get('sort_by') || 'id',
+          sort_dir: sp.get('sort_dir') === 'desc' ? 'desc' : 'asc',
+        };
+      } catch (e) {
+        return {
+          tab: 'console',
+          page: 1,
+          page_size: 25,
+          search: '',
+          status: '',
+          country: '',
+          plan: '',
+          date_from: '2025-01-01',
+          date_to: '2026-11-15',
+          sort_by: 'id',
+          sort_dir: 'asc',
+        };
+      }
+    }
+
+    function syncUrlParams(state) {
+      try {
+        const sp = new URLSearchParams();
+        if (state.tab && state.tab !== 'console') sp.set('tab', state.tab);
+        if (state.page > 1) sp.set('page', String(state.page));
+        if (state.page_size !== 25) sp.set('page_size', String(state.page_size));
+        if (state.search) sp.set('search', state.search);
+        if (state.status) sp.set('status', state.status);
+        if (state.country) sp.set('country', state.country);
+        if (state.plan) sp.set('plan', state.plan);
+        if (state.date_from && state.date_from !== '2025-01-01') sp.set('date_from', state.date_from);
+        if (state.date_to && state.date_to !== '2026-11-15') sp.set('date_to', state.date_to);
+        if (state.sort_by !== 'id') sp.set('sort_by', state.sort_by);
+        if (state.sort_dir !== 'asc') sp.set('sort_dir', state.sort_dir);
+        const qs = sp.toString();
+        const nextUrl = window.location.pathname + (qs ? '?' + qs : '');
+        window.history.replaceState(null, '', nextUrl);
+      } catch (e) {}
+    }
+
+    function formatCents(cents) {
+      const val = (Number(cents || 0) / 100);
+      return '$' + val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    /* ============================================================================
+     * 5. RESILIENT LIQUID GLASS SUMMARY CHART (SVG + Interactive Scrubbing)
+     * ============================================================================ */
+    function LiquidGlassSummaryChart({
+      summaryData,
+      summaryStatus, // 'loading' | 'ok' | 'stale_error' | 'cold_error'
+      summaryErrorMsg,
+      metricKey,
+      onMetricKeyChange,
+      failureRate,
+      onFailureRateChange,
+      onForce500,
+      onRetry,
+      lightMode,
+    }) {
+      const [hoverIdx, setHoverIdx] = useState(null);
+      const series = (summaryData && summaryData.series) || [];
+
+      const metricMeta = {
+        minutes: { label: 'Voice Minutes', color: '#22d3ee', fillId: 'gradCyan', unit: 'min', fmt: (v) => Number(v).toLocaleString() + ' min' },
+        cost_cents: { label: 'Usage Spend ($)', color: '#a855f7', fillId: 'gradPurple', unit: 'USD', fmt: (v) => formatCents(v) },
+        sms: { label: 'SMS Messages', color: '#34d399', fillId: 'gradEmerald', unit: 'msg', fmt: (v) => Number(v).toLocaleString() + ' SMS' },
+        signups: { label: 'Cohort Signups', color: '#f59e0b', fillId: 'gradAmber', unit: 'accts', fmt: (v) => Number(v).toLocaleString() + ' signups' },
+      }[metricKey] || { label: 'Voice Minutes', color: '#22d3ee', fillId: 'gradCyan', unit: 'min', fmt: (v) => v };
+
+      const values = series.map((d) => Number(d[metricKey] || 0));
+      const maxVal = Math.max(1, ...values);
+      const minVal = Math.min(0, ...values);
+      const totalVal = values.reduce((acc, v) => acc + v, 0);
+
+      const width = 760;
+      const height = 210;
+      const padLeft = 18;
+      const padRight = 18;
+      const padTop = 20;
+      const padBottom = 28;
+      const plotW = width - padLeft - padRight;
+      const plotH = height - padTop - padBottom;
+
+      const points = series.map((d, i) => {
+        const x = padLeft + (series.length <= 1 ? plotW / 2 : (i / (series.length - 1)) * plotW);
+        const norm = (Number(d[metricKey] || 0) - minVal) / (maxVal - minVal || 1);
+        const y = padTop + plotH - norm * plotH;
+        return { x, y, raw: d };
+      });
+
+      const linePath = points
+        .map((p, idx) => `${idx === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`)
+        .join(' ');
+      const areaPath = points.length
+        ? `${linePath} L ${points[points.length - 1].x.toFixed(1)} ${(padTop + plotH).toFixed(1)} L ${points[0].x.toFixed(1)} ${(padTop + plotH).toFixed(1)} Z`
+        : '';
+
+      const activePoint = hoverIdx !== null && points[hoverIdx] ? points[hoverIdx] : points[points.length - 1];
+
+      return html`
+        <section
+          aria-label="Aggregated Account Usage Telemetry Chart"
+          className="liquid-glass-card rounded-3xl p-4 sm:p-6 transition-all duration-300"
+        >
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-4">
+            <div>
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold uppercase apple-micro bg-cyan-500/15 text-cyan-300 border border-cyan-400/25">
+                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
+                  GET /accounts/summary
+                </span>
+                ${summaryStatus === 'ok' && html`
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/15 text-emerald-300 border border-emerald-400/25">
+                    200 OK · ${summaryData ? summaryData.total_accounts.toLocaleString() : 0} cohort accounts
+                  </span>
+                `}
+                ${summaryStatus === 'stale_error' && html`
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-500/20 text-amber-200 border border-amber-400/40">
+                    HTTP 500 Caught · Showing Stale Snapshot
+                  </span>
+                `}
+                ${summaryStatus === 'cold_error' && html`
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-rose-500/20 text-rose-200 border border-rose-400/40">
+                    HTTP 500 Upstream Fault
+                  </span>
+                `}
+              </div>
+              <h2 className="apple-display text-lg sm:text-xl font-bold mt-1.5 flex items-baseline gap-3">
+                <span>Aggregated Telemetry Curve</span>
+                ${activePoint && html`
+                  <span className="text-sm font-mono font-semibold text-cyan-300 tabular-nums">
+                    ${activePoint.raw.date}: ${metricMeta.fmt(activePoint.raw[metricKey])}
+                  </span>
+                `}
+              </h2>
+            </div>
+
+            <!-- Metric Selector Pills + Chaos 500 Controls -->
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="liquid-pill p-1 rounded-2xl flex items-center gap-1" role="tablist" aria-label="Chart Metric Selector">
+                ${[
+                  { id: 'minutes', label: 'Minutes' },
+                  { id: 'cost_cents', label: 'Spend ($)' },
+                  { id: 'sms', label: 'SMS' },
+                  { id: 'signups', label: 'Signups' },
+                ].map((m) => html`
+                  <button
+                    key=${m.id}
+                    type="button"
+                    role="tab"
+                    aria-selected=${metricKey === m.id}
+                    onClick=${() => { tactile.tap(); onMetricKeyChange(m.id); }}
+                    className=${`apple-press px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                      metricKey === m.id
+                        ? 'bg-cyan-400 text-slate-950 shadow-sm'
+                        : 'text-slate-300 hover:text-white'
+                    }`}
+                  >
+                    ${m.label}
+                  </button>
+                `)}
+              </div>
+
+              <div className="liquid-pill px-3 py-1.5 rounded-2xl flex items-center gap-2 text-xs">
+                <label htmlFor="chaos-500-slider" className="text-slate-300 font-medium whitespace-nowrap">
+                  500 Fault Rate: <span className="font-mono text-amber-300 tabular-nums">${Math.round(failureRate * 100)}%</span>
+                </label>
+                <input
+                  id="chaos-500-slider"
+                  type="range"
+                  min="0"
+                  max="0.8"
+                  step="0.05"
+                  value=${failureRate}
+                  onChange=${(e) => onFailureRateChange(parseFloat(e.target.value))}
+                  className="w-16 accent-amber-400 cursor-pointer"
+                  title="Task 2 Spec: /accounts/summary fails randomly ~20% (1 in 5) with HTTP 500"
+                />
+                <button
+                  type="button"
+                  onClick=${() => { tactile.warn(); onForce500(); }}
+                  className="apple-press px-2 py-0.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-400/30 font-semibold text-[11px]"
+                  title="Deliberately trigger an HTTP 500 on /accounts/summary right now to verify graceful partial-failure handling"
+                >
+                  Force 500
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Partial-Failure Inline Banner (When 500 occurs but stale series is preserved) -->
+          ${summaryStatus === 'stale_error' && html`
+            <div
+              role="status"
+              aria-live="polite"
+              className="mb-3 px-4 py-2.5 rounded-2xl bg-amber-500/15 border border-amber-400/35 flex flex-wrap items-center justify-between gap-2 text-xs text-amber-100"
+            >
+              <div className="flex items-center gap-2">
+                <span className="inline-block w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+                <span>
+                  <strong>Graceful Partial-Failure Active:</strong> ${summaryErrorMsg || 'GET /accounts/summary returned HTTP 500.'} Preserving last verified series so your workflow never jumps.
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick=${() => { tactile.tap(); onRetry(); }}
+                className="apple-press px-3 py-1 rounded-xl bg-amber-400 text-slate-950 font-bold hover:bg-amber-300"
+              >
+                Retry Chart Load
+              </button>
+            </div>
+          `}
+
+          <!-- Cold-Boot Error State (If 500 happened before any series was cached, or user forced cold error) -->
+          ${summaryStatus === 'cold_error' ? html`
+            <div className="h-52 rounded-2xl border border-rose-500/30 bg-rose-950/20 flex flex-col items-center justify-center p-6 text-center">
+              <p className="text-sm font-semibold text-rose-200 mb-1">
+                Upstream Summary Endpoint Returned HTTP 500 (Deliberate 1-in-5 Chaos Fault)
+              </p>
+              <p className="text-xs text-slate-300 max-w-md mb-4">
+                ${summaryErrorMsg || 'The chart failed to load, but the 10,500-account table below remains 100% operational.'}
+              </p>
+              <button
+                type="button"
+                onClick=${() => { tactile.commit(); onRetry(); }}
+                className="apple-press px-4 py-2 rounded-2xl bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-950 font-bold text-xs shadow-lg"
+              >
+                Retry GET /accounts/summary Now
+              </button>
+            </div>
+          ` : html`
+            <!-- Fixed-height SVG Chart Container (Web-App Rule 4) -->
+            <div className="relative h-52 w-full select-none">
+              <svg
+                viewBox=${`0 0 ${width} ${height}`}
+                className="w-full h-full overflow-visible"
+                role="img"
+                aria-label=${`${metricMeta.label} trend chart`}
+              >
+                <defs>
+                  <linearGradient id="gradCyan" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.42" />
+                    <stop offset="100%" stopColor="#22d3ee" stopOpacity="0.0" />
+                  </linearGradient>
+                  <linearGradient id="gradPurple" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#a855f7" stopOpacity="0.42" />
+                    <stop offset="100%" stopColor="#a855f7" stopOpacity="0.0" />
+                  </linearGradient>
+                  <linearGradient id="gradEmerald" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#34d399" stopOpacity="0.42" />
+                    <stop offset="100%" stopColor="#34d399" stopOpacity="0.0" />
+                  </linearGradient>
+                  <linearGradient id="gradAmber" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.42" />
+                    <stop offset="100%" stopColor="#f59e0b" stopOpacity="0.0" />
+                  </linearGradient>
+                </defs>
+
+                <!-- Horizontal subtle glass grid lines -->
+                ${[0, 0.25, 0.5, 0.75, 1].map((t, i) => {
+                  const y = padTop + t * plotH;
+                  return html`
+                    <line
+                      key=${i}
+                      x1=${padLeft}
+                      y1=${y}
+                      x2=${width - padRight}
+                      y2=${y}
+                      stroke=${lightMode ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.08)'}
+                      strokeDasharray="4 4"
+                    />
+                  `;
+                })}
+
+                ${areaPath && html`
+                  <path d=${areaPath} fill=${`url(#${metricMeta.fillId})`} />
+                `}
+                ${linePath && html`
+                  <path
+                    d=${linePath}
+                    fill="none"
+                    stroke=${metricMeta.color}
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                `}
+
+                ${points.map((p, idx) => {
+                  const isHovered = hoverIdx === idx || (hoverIdx === null && idx === points.length - 1);
+                  return html`
+                    <g key=${p.raw.date}>
+                      ${isHovered && html`
+                        <line
+                          x1=${p.x}
+                          y1=${padTop}
+                          x2=${p.x}
+                          y2=${padTop + plotH}
+                          stroke=${metricMeta.color}
+                          strokeWidth="1.2"
+                          strokeDasharray="3 3"
+                          opacity="0.7"
+                        />
+                      `}
+                      <circle
+                        cx=${p.x}
+                        cy=${p.y}
+                        r=${isHovered ? 5.5 : 3.2}
+                        fill=${isHovered ? '#ffffff' : metricMeta.color}
+                        stroke=${metricMeta.color}
+                        strokeWidth=${isHovered ? 3 : 1.5}
+                      />
+                      <text
+                        x=${p.x}
+                        y=${height - 6}
+                        textAnchor="middle"
+                        fontSize="10"
+                        fill=${lightMode ? '#475569' : '#94a3b8'}
+                        className="font-mono"
+                      >
+                        ${idx % 2 === 0 ? p.raw.date.slice(5) : ''}
+                      </text>
+                      <rect
+                        x=${p.x - plotW / (points.length * 2)}
+                        y=${padTop}
+                        width=${plotW / points.length}
+                        height=${plotH}
+                        fill="transparent"
+                        className="cursor-crosshair"
+                        onMouseEnter=${() => setHoverIdx(idx)}
+                        onMouseLeave=${() => setHoverIdx(null)}
+                      />
+                    </g>
+                  `;
+                })}
+              </svg>
+            </div>
+          `}
+
+          <!-- Bottom KPI Summary Strip inside Chart Card -->
+          <div className="mt-3 pt-3 border-t border-white/10 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+            <div className="liquid-pill rounded-2xl px-3 py-2">
+              <span className="text-slate-400 block text-[11px]">Window Total (${metricMeta.label})</span>
+              <span className="font-mono font-bold text-sm tabular-nums text-cyan-300">
+                ${metricMeta.fmt(totalVal)}
+              </span>
+            </div>
+            <div className="liquid-pill rounded-2xl px-3 py-2">
+              <span className="text-slate-400 block text-[11px]">Peak Bucket</span>
+              <span className="font-mono font-bold text-sm tabular-nums">
+                ${metricMeta.fmt(maxVal)}
+              </span>
+            </div>
+            <div className="liquid-pill rounded-2xl px-3 py-2">
+              <span className="text-slate-400 block text-[11px]">Matched Cohort Accounts</span>
+              <span className="font-mono font-bold text-sm tabular-nums text-emerald-300">
+                ${summaryData ? summaryData.total_accounts.toLocaleString() : '—'} / 10,500
+              </span>
+            </div>
+            <div className="liquid-pill rounded-2xl px-3 py-2 flex items-center justify-between">
+              <div>
+                <span className="text-slate-400 block text-[11px]">Resilience Mode</span>
+                <span className="font-semibold text-[11px] text-slate-200">Stale-While-Revalidate</span>
+              </div>
+              <button
+                type="button"
+                onClick=${() => { tactile.tap(); onRetry(); }}
+                className="apple-press px-2.5 py-1 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-semibold"
+              >
+                Refresh
+              </button>
+            </div>
+          </div>
+        </section>
+      `;
+    }
+
+    /* ============================================================================
+     * 6. 4-STEP ACCOUNT SETTINGS SHEET (1:1 Pointer Drag + Spring Physics + Step 4->2 Lock Resolver)
+     * ============================================================================ */
+    function AccountSettingsSheet({
+      account,
+      onClose,
+      onAccountUpdated,
+      reducedMotion,
+    }) {
+      const [activeStep, setActiveStep] = useState(1);
+      // Server-committed snapshot keyed by step '1'..'4'
+      const [serverSteps, setServerSteps] = useState({});
+      // Client draft state for all 4 steps
+      const [draft, setDraft] = useState({
+        1: { name: '', email: '' },
+        2: { plan: 'pro', billing_country: 'US' },
+        3: { minutes_cap: 5000, sms_cap: 1500 },
+        4: { webhook_url: '' },
+      });
+      // Per-step server validation errors: { 1: {field: msg}, 2: {billing_country: 'billing_country is required'}, ... }
+      const [stepErrors, setStepErrors] = useState({});
+      const [stepSaveStatus, setStepSaveStatus] = useState({}); // 'idle' | 'saving' | 'saved' | 'error_rolled_back'
+      const [submitBanner, setSubmitBanner] = useState(null);
+      const [step4LockDetected, setStep4LockDetected] = useState(false);
+
+      // Apple Design §2, §3, §5, §6, §9: 1:1 Pointer Tracking, Rubber-banding, and Harmonic Spring State
+      const [dragY, setDragY] = useState(0);
+      const dragRef = useRef({ active: false, startY: 0, grabOffset: 0, history: [], stopSpring: null });
+      const firstInputRef = useRef(null);
+
+      // Load saved settings draft from server when account changes
+      useEffect(() => {
+        if (!account) return;
+        const saved = mockApiTwin.getAccountSettings(account.id);
+        setServerSteps(saved);
+        setDraft({
+          1: {
+            name: (saved['1'] && saved['1'].name) ?? account.name,
+            email: (saved['1'] && saved['1'].email) ?? account.email,
+          },
+          2: {
+            plan: (saved['2'] && saved['2'].plan) ?? account.plan,
+            billing_country: (saved['2'] && saved['2'].billing_country) ?? (['US', 'IN', 'GB', 'CA', 'AU'].includes(account.country) ? account.country : 'US'),
+          },
+          3: {
+            minutes_cap: (saved['3'] && saved['3'].minutes_cap) ?? 5000,
+            sms_cap: (saved['3'] && saved['3'].sms_cap) ?? 1500,
+          },
+          4: {
+            webhook_url: (saved['4'] && saved['4'].webhook_url) ?? '',
+          },
+        });
+        setStepErrors({});
+        setStepSaveStatus({
+          1: saved['1'] ? 'saved' : 'idle',
+          2: saved['2'] ? 'saved' : 'idle',
+          3: saved['3'] ? 'saved' : 'idle',
+          4: saved['4'] ? 'saved' : 'idle',
+        });
+        setStep4LockDetected(Boolean(saved['4']));
+        setSubmitBanner(null);
+        setActiveStep(1);
+
+        // Animate sheet entrance with critically damped Apple spring (damping 1.0, response 0.35s)
+        setDragY(340);
+        if (dragRef.current.stopSpring) dragRef.current.stopSpring();
+        dragRef.current.stopSpring = animateAppleSpring({
+          from: 340,
+          to: 0,
+          initialVelocity: 0,
+          dampingRatio: 1.0,
+          response: 0.34,
+          reducedMotion,
+          onUpdate: (v) => setDragY(v),
+        });
+      }, [account, reducedMotion]);
+
+      // Focus management and keyboard shortcuts inside the sheet (Esc to close, Alt+1..4 to jump steps)
+      useEffect(() => {
+        if (firstInputRef.current) {
+          firstInputRef.current.focus();
+        }
+      }, [activeStep]);
+
+      useEffect(() => {
+        function onKeyDown(e) {
+          if (e.key === 'Escape') {
+            e.preventDefault();
+            handleAnimatedClose(0);
+          } else if (e.altKey && ['1', '2', '3', '4'].includes(e.key)) {
+            e.preventDefault();
+            setActiveStep(Number(e.key));
+          }
+        }
+        window.addEventListener('keydown', onKeyDown);
+        return () => window.removeEventListener('keydown', onKeyDown);
+      }, []);
+
+      function handleAnimatedClose(releaseVelocity = 0) {
+        tactile.tap();
+        if (dragRef.current.stopSpring) dragRef.current.stopSpring();
+        dragRef.current.stopSpring = animateAppleSpring({
+          from: dragY,
+          to: 520,
+          initialVelocity: releaseVelocity,
+          dampingRatio: 1.0,
+          response: 0.28,
+          reducedMotion,
+          onUpdate: (v) => setDragY(v),
+          onComplete: () => onClose(),
+        });
+      }
+
+      // Apple Design §2: Direct Manipulation 1:1 Pointer Events on Sheet Handle
+      function handlePointerDown(e) {
+        if (dragRef.current.stopSpring) dragRef.current.stopSpring();
+        e.currentTarget.setPointerCapture(e.pointerId);
+        dragRef.current.active = true;
+        dragRef.current.startY = e.clientY - dragY;
+        dragRef.current.history = [{ y: e.clientY, t: performance.now() }];
+      }
+
+      function handlePointerMove(e) {
+        if (!dragRef.current.active) return;
+        const rawDelta = e.clientY - dragRef.current.startY;
+        const now = performance.now();
+        dragRef.current.history.push({ y: e.clientY, t: now });
+        if (dragRef.current.history.length > 6) dragRef.current.history.shift();
+
+        // Rubber-band when dragging upward past 0
+        if (rawDelta < 0) {
+          setDragY(appleRubberband(rawDelta, 240, 0.55));
+        } else {
+          setDragY(rawDelta);
+        }
+      }
+
+      function handlePointerUp(e) {
+        if (!dragRef.current.active) return;
+        dragRef.current.active = false;
+        try {
+          e.currentTarget.releasePointerCapture(e.pointerId);
+        } catch (err) {}
+
+        // Compute release velocity (px/s) from short pointer history (§2 & §5)
+        const hist = dragRef.current.history;
+        let velocityPxPerSec = 0;
+        if (hist.length >= 2) {
+          const first = hist[0];
+          const last = hist[hist.length - 1];
+          const dt = Math.max(1, last.t - first.t) / 1000;
+          velocityPxPerSec = (last.y - first.y) / dt;
+        }
+
+        // Apple Design §6: Momentum projection to decide dismiss vs snap-back
+        const projectedY = dragY + appleProjectMomentum(velocityPxPerSec, 0.996);
+        if (projectedY > 190 && velocityPxPerSec >= -80) {
+          handleAnimatedClose(velocityPxPerSec);
+        } else {
+          // Bounce slightly (dampingRatio 0.82) only when gesture carried momentum
+          const damp = Math.abs(velocityPxPerSec) > 250 ? 0.82 : 1.0;
+          dragRef.current.stopSpring = animateAppleSpring({
+            from: dragY,
+            to: 0,
+            initialVelocity: velocityPxPerSec,
+            dampingRatio: damp,
+            response: 0.36,
+            reducedMotion,
+            onUpdate: (v) => setDragY(v),
+          });
+        }
+      }
+
+      // Autosave or manual save for a step (`PUT /accounts/{id}/settings/step/{step}`)
+      function saveStep(stepNum, stepDataOverride = null, options = {}) {
+        const payloadData = stepDataOverride || draft[stepNum];
+        setStepSaveStatus((prev) => ({ ...prev, [stepNum]: 'saving' }));
+
+        try {
+          const res = mockApiTwin.saveAccountSettingsStep(account.id, stepNum, payloadData, options);
+          const refreshedServer = mockApiTwin.getAccountSettings(account.id);
+          setServerSteps(refreshedServer);
+          setStep4LockDetected(Boolean(refreshedServer['4']));
+          setStepErrors((prev) => {
+            const next = { ...prev };
+            delete next[stepNum];
+            return next;
+          });
+          setStepSaveStatus((prev) => ({ ...prev, [stepNum]: 'saved' }));
+          tactile.commit();
+          onAccountUpdated();
+          return { ok: true, res };
+        } catch (err) {
+          tactile.warn();
+          const errStep = (err.payload && err.payload.detail && err.payload.detail.step) || stepNum;
+          const fieldErrors = (err.payload && err.payload.detail && err.payload.detail.errors) || {
+            _general: err.message || 'Failed to save step',
+          };
+
+          // Route error to the exact step it belongs to (even if user is on another step!)
+          setStepErrors((prev) => ({ ...prev, [errStep]: fieldErrors }));
+          setStepSaveStatus((prev) => ({ ...prev, [errStep]: 'error_rolled_back' }));
+
+          if (errStep === 2 && fieldErrors.billing_country === 'billing_country is required') {
+            setStep4LockDetected(true);
+          }
+          return { ok: false, errStep, fieldErrors };
+        }
+      }
+
+      function updateDraftField(stepNum, field, value) {
+        const nextStepDraft = { ...draft[stepNum], [field]: value };
+        setDraft((prev) => ({ ...prev, [stepNum]: nextStepDraft }));
+      }
+
+      // Clean Rollback: revert dirty draft on a failed step back to last verified server state
+      function rollbackStepToServerSnapshot(stepNum) {
+        tactile.tap();
+        const committed = serverSteps[String(stepNum)];
+        if (committed) {
+          setDraft((prev) => ({ ...prev, [stepNum]: { ...committed } }));
+        }
+        setStepErrors((prev) => {
+          const next = { ...prev };
+          delete next[stepNum];
+          return next;
+        });
+        setStepSaveStatus((prev) => ({ ...prev, [stepNum]: committed ? 'saved' : 'idle' }));
+      }
+
+      // Smart Atomic Resolution for the deliberate Step 4 -> Step 2 billing_country 422 trap!
+      function handleAtomicStep2BypassAndSave() {
+        tactile.commit();
+        // 1. Temporarily lift Step 4 draft lock
+        const cachedStep4 = mockApiTwin.clearStep4Lock(account.id);
+        // 2. Save Step 2 cleanly with the user's chosen billing_country and plan
+        const step2Result = saveStep(2, draft[2]);
+        // 3. Re-save Step 4 draft immediately so all 4 steps are saved & valid
+        if (step2Result.ok) {
+          const step4Payload = draft[4] && draft[4].webhook_url ? draft[4] : (cachedStep4 || { webhook_url: '' });
+          saveStep(4, step4Payload);
+          setSubmitBanner({
+            type: 'success',
+            text: 'Resolved Step-4 → Step-2 lock: committed Step 2 billing_country first, then re-saved Step 4 draft.',
+          });
+        }
+      }
+
+      function handleFinalSubmit(e) {
+        e.preventDefault();
+        setSubmitBanner(null);
+
+        // Ensure steps 1..4 are saved; if Step 4 already exists on server and Step 2 is already saved on server,
+        // do not re-trigger Step 2 PUT unless Step 2 was modified!
+        for (const s of [1, 2, 3, 4]) {
+          const alreadyCommitted = Boolean(serverSteps[String(s)]);
+          const isDirty = JSON.stringify(draft[s]) !== JSON.stringify(serverSteps[String(s)] || {});
+          if (!alreadyCommitted || isDirty) {
+            const res = saveStep(s);
+            if (!res.ok) {
+              // Automatically jump focus to the step that reported the server-side validation error
+              setActiveStep(res.errStep);
+              setSubmitBanner({
+                type: 'error',
+                text: `Server rejected Step ${res.errStep} (${Object.values(res.fieldErrors).join(', ')}). Navigated to Step ${res.errStep}.`,
+              });
+              return;
+            }
+          }
+        }
+
+        try {
+          const finalRes = mockApiTwin.submitAccountSettings(account.id);
+          tactile.commit();
+          setSubmitBanner({
+            type: 'success',
+            text: `All 4 steps finalized via POST /accounts/${account.id}/settings/submit at ${new Date(finalRes.submitted_at).toLocaleTimeString()}.`,
+          });
+          onAccountUpdated();
+        } catch (err) {
+          tactile.warn();
+          const missing = (err.payload && err.payload.detail && err.payload.detail.missing_steps) || [];
+          if (missing.length > 0) setActiveStep(missing[0]);
+          setSubmitBanner({
+            type: 'error',
+            text: err.message,
+          });
+        }
+      }
+
+      if (!account) return null;
+
+      const stepTitles = [
+        { num: 1, title: 'Identity & Contact', sub: 'name, email' },
+        { num: 2, title: 'Plan & Billing Region', sub: 'plan, billing_country' },
+        { num: 3, title: 'Usage Guardrails', sub: 'minutes_cap, sms_cap' },
+        { num: 4, title: 'Webhook Endpoint', sub: 'webhook_url' },
+      ];
+
+      return html`
+        <div
+          className="fixed inset-0 z-50 flex justify-end bg-slate-950/60 backdrop-blur-sm transition-opacity"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="settings-sheet-title"
+          onClick=${(e) => { if (e.target === e.currentTarget) handleAnimatedClose(0); }}
+        >
+          <div
+            style=${{ transform: `translate3d(0, ${dragY.toFixed(1)}px, 0)` }}
+            className="liquid-glass-sheet w-full max-w-xl h-full overflow-y-auto p-5 sm:p-7 flex flex-col justify-between will-change-transform"
+          >
+            <div>
+              <!-- Gesture Drag Handle (1:1 Pointer Tracking + Rubber-banding) -->
+              <div
+                onPointerDown=${handlePointerDown}
+                onPointerMove=${handlePointerMove}
+                onPointerUp=${handlePointerUp}
+                onPointerCancel=${handlePointerUp}
+                title="Drag down to dismiss (1:1 pointer tracking with Apple rubber-banding & momentum projection)"
+                className="w-full py-2 mb-2 flex flex-col items-center cursor-grab active:cursor-grabbing touch-none"
+              >
+                <div className="w-12 h-1.5 rounded-full bg-white/30"></div>
+                <span className="text-[10px] text-slate-400 mt-1">Drag handle (1:1 spring physics) or press Esc</span>
+              </div>
+
+              <!-- Sheet Header -->
+              <div className="flex items-start justify-between gap-3 pb-4 border-b border-white/10">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-400/30">
+                      Account #${account.id}
+                    </span>
+                    <span className="text-xs text-slate-400 font-mono">${account.company}</span>
+                  </div>
+                  <h2 id="settings-sheet-title" className="apple-display text-xl font-bold mt-1">
+                    4-Step Account Settings
+                  </h2>
+                </div>
+                <button
+                  type="button"
+                  onClick=${() => handleAnimatedClose(0)}
+                  aria-label="Close Account Settings"
+                  className="apple-press px-3 py-1.5 rounded-2xl liquid-pill text-xs font-semibold hover:bg-white/15"
+                >
+                  Close (Esc)
+                </button>
+              </div>
+
+              <!-- 4-Step Segmented Navigator (Shows server validation badges on the exact step they belong to) -->
+              <nav aria-label="Settings Steps" className="grid grid-cols-4 gap-2 my-4">
+                ${stepTitles.map((st) => {
+                  const hasError = Boolean(stepErrors[st.num]);
+                  const isSaved = Boolean(serverSteps[String(st.num)]);
+                  const isCurrent = activeStep === st.num;
+                  return html`
+                    <button
+                      key=${st.num}
+                      type="button"
+                      onClick=${() => { tactile.tap(); setActiveStep(st.num); }}
+                      className=${`apple-press text-left p-2.5 rounded-2xl border transition-all relative ${
+                        hasError
+                          ? 'bg-rose-500/20 border-rose-400 text-rose-100'
+                          : isCurrent
+                          ? 'bg-cyan-500/20 border-cyan-400 text-white shadow-md'
+                          : isSaved
+                          ? 'bg-emerald-500/10 border-emerald-400/30 text-slate-200'
+                          : 'liquid-pill text-slate-400'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between text-[11px] font-bold">
+                        <span>Step ${st.num}</span>
+                        ${hasError ? html`
+                          <span className="px-1.5 py-0.2 rounded-full bg-rose-500 text-white text-[10px]">422!</span>
+                        ` : isSaved ? html`
+                          <span className="text-emerald-300 text-[10px]">Saved ✓</span>
+                        ` : html`
+                          <span className="text-slate-400 text-[10px]">Draft</span>
+                        `}
+                      </div>
+                      <div className="text-xs font-semibold truncate mt-0.5">${st.title}</div>
+                    </button>
+                  `;
+                })}
+              </nav>
+
+              <!-- Deliberate Step 4 -> Step 2 Server Validation Lock Diagnostic Card -->
+              ${(stepErrors[2] || Boolean(serverSteps['4'])) && html`
+                <div className="mb-4 p-3.5 rounded-2xl bg-amber-500/15 border border-amber-400/40 text-xs space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-bold text-amber-200 flex items-center gap-1.5">
+                      <span>⚡ Upstream API Constraint (Step 4 → Step 2 Lock)</span>
+                    </span>
+                    <span className="font-mono text-[10px] px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-200">
+                      Task2_spec.md §PUT /step/2
+                    </span>
+                  </div>
+                  <p className="text-slate-200 leading-relaxed">
+                    Once <strong>Step 4</strong> has a saved draft on the mock server, any direct <code className="font-mono text-amber-200">PUT /settings/step/2</code> returns <code className="font-mono text-rose-300">422 "billing_country is required"</code> even with a valid country.
+                  </p>
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick=${() => {
+                        setActiveStep(2);
+                        saveStep(2, draft[2], { bypassStep4Lock: false });
+                      }}
+                      className="apple-press px-2.5 py-1.5 rounded-xl bg-rose-500/25 hover:bg-rose-500/35 border border-rose-400/40 text-rose-100 font-semibold"
+                    >
+                      Test Raw 422 Error on Step 2
+                    </button>
+                    <button
+                      type="button"
+                      onClick=${handleAtomicStep2BypassAndSave}
+                      className="apple-press px-2.5 py-1.5 rounded-xl bg-emerald-400 text-slate-950 font-bold hover:bg-emerald-300"
+                    >
+                      Smart Fix: Re-sequence Step 2 → Step 4
+                    </button>
+                    ${stepErrors[2] && html`
+                      <button
+                        type="button"
+                        onClick=${() => rollbackStepToServerSnapshot(2)}
+                        className="apple-press px-2.5 py-1.5 rounded-xl liquid-pill text-slate-200 font-semibold hover:bg-white/15"
+                      >
+                        Rollback Step 2 to Server Snapshot
+                      </button>
+                    `}
+                  </div>
+                </div>
+              `}
+
+              <!-- Active Step Form Fields -->
+              <form id="account-settings-form" onSubmit=${handleFinalSubmit} className="space-y-4">
+                ${activeStep === 1 && html`
+                  <div className="liquid-glass-card rounded-2xl p-4 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-bold text-sm">Step 1: Account Holder &amp; Primary Email</h3>
+                      <span className="text-[11px] font-mono text-slate-400">PUT /accounts/${account.id}/settings/step/1</span>
+                    </div>
+                    <div>
+                      <label htmlFor="step1-name" className="block text-xs font-semibold text-slate-300 mb-1">
+                        Account Name <span className="text-rose-400">*</span>
+                      </label>
+                      <input
+                        id="step1-name"
+                        ref=${firstInputRef}
+                        type="text"
+                        value=${draft[1].name}
+                        onChange=${(e) => updateDraftField(1, 'name', e.target.value)}
+                        onBlur=${() => saveStep(1)}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/80 border border-white/15 text-sm text-white focus:outline-none focus:border-cyan-400"
+                        placeholder="e.g. Aarav Sharma"
+                      />
+                      ${stepErrors[1] && stepErrors[1].name && html`
+                        <p role="alert" className="text-xs text-rose-300 mt-1 font-medium">${stepErrors[1].name}</p>
+                      `}
+                    </div>
+                    <div>
+                      <label htmlFor="step1-email" className="block text-xs font-semibold text-slate-300 mb-1">
+                        Billing Email (must contain @) <span className="text-rose-400">*</span>
+                      </label>
+                      <input
+                        id="step1-email"
+                        type="text"
+                        value=${draft[1].email}
+                        onChange=${(e) => updateDraftField(1, 'email', e.target.value)}
+                        onBlur=${() => saveStep(1)}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/80 border border-white/15 text-sm text-white focus:outline-none focus:border-cyan-400"
+                        placeholder="name@company.io"
+                      />
+                      ${stepErrors[1] && stepErrors[1].email && html`
+                        <p role="alert" className="text-xs text-rose-300 mt-1 font-medium">${stepErrors[1].email}</p>
+                      `}
+                    </div>
+                  </div>
+                `}
+
+                ${activeStep === 2 && html`
+                  <div className="liquid-glass-card rounded-2xl p-4 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-bold text-sm">Step 2: Subscription Tier &amp; Billing Country</h3>
+                      <span className="text-[11px] font-mono text-slate-400">PUT /accounts/${account.id}/settings/step/2</span>
+                    </div>
+                    <div>
+                      <label htmlFor="step2-plan" className="block text-xs font-semibold text-slate-300 mb-1">
+                        Subscription Plan <span className="text-rose-400">*</span>
+                      </label>
+                      <select
+                        id="step2-plan"
+                        ref=${firstInputRef}
+                        value=${draft[2].plan}
+                        onChange=${(e) => {
+                          const next = { ...draft[2], plan: e.target.value };
+                          setDraft((p) => ({ ...p, 2: next }));
+                          saveStep(2, next);
+                        }}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/90 border border-white/15 text-sm text-white focus:outline-none focus:border-cyan-400"
+                      >
+                        <option value="basic">Basic ($49 / mo base)</option>
+                        <option value="pro">Pro ($299 / mo base)</option>
+                        <option value="enterprise">Enterprise ($999 / mo base)</option>
+                      </select>
+                      ${stepErrors[2] && stepErrors[2].plan && html`
+                        <p role="alert" className="text-xs text-rose-300 mt-1 font-medium">${stepErrors[2].plan}</p>
+                      `}
+                    </div>
+                    <div>
+                      <label htmlFor="step2-country" className="block text-xs font-semibold text-slate-300 mb-1">
+                        Billing Country (US, IN, GB, CA, AU) <span className="text-rose-400">*</span>
+                      </label>
+                      <select
+                        id="step2-country"
+                        value=${draft[2].billing_country}
+                        onChange=${(e) => {
+                          const next = { ...draft[2], billing_country: e.target.value };
+                          setDraft((p) => ({ ...p, 2: next }));
+                          saveStep(2, next);
+                        }}
+                        className=${`w-full px-3.5 py-2.5 rounded-xl bg-slate-900/90 border text-sm text-white focus:outline-none ${
+                          stepErrors[2] && stepErrors[2].billing_country ? 'border-rose-400 ring-2 ring-rose-500/30' : 'border-white/15 focus:border-cyan-400'
+                        }`}
+                      >
+                        <option value="US">United States (US)</option>
+                        <option value="IN">India (IN)</option>
+                        <option value="GB">United Kingdom (GB)</option>
+                        <option value="CA">Canada (CA)</option>
+                        <option value="AU">Australia (AU)</option>
+                      </select>
+                      ${stepErrors[2] && stepErrors[2].billing_country && html`
+                        <div role="alert" className="mt-2 p-2.5 rounded-xl bg-rose-500/20 border border-rose-400/40 text-xs text-rose-100">
+                          <div className="font-bold">Server 422 Validation Error on Step 2:</div>
+                          <div className="font-mono mt-0.5">"billing_country": "${stepErrors[2].billing_country}"</div>
+                          <div className="text-[11px] text-rose-200 mt-1">
+                            Server-committed snapshot preserved (${(serverSteps['2'] && serverSteps['2'].billing_country) || 'none'}). Use <strong>Smart Fix</strong> above to commit changes cleanly or <strong>Rollback</strong> to restore the server snapshot.
+                          </div>
+                        </div>
+                      `}
+                    </div>
+                  </div>
+                `}
+
+                ${activeStep === 3 && html`
+                  <div className="liquid-glass-card rounded-2xl p-4 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-bold text-sm">Step 3: Monthly Usage Guardrails</h3>
+                      <span className="text-[11px] font-mono text-slate-400">PUT /accounts/${account.id}/settings/step/3</span>
+                    </div>
+                    <div>
+                      <label htmlFor="step3-minutes" className="block text-xs font-semibold text-slate-300 mb-1">
+                        Monthly Voice Minutes Cap (optional)
+                      </label>
+                      <input
+                        id="step3-minutes"
+                        ref=${firstInputRef}
+                        type="number"
+                        min="0"
+                        value=${draft[3].minutes_cap}
+                        onChange=${(e) => updateDraftField(3, 'minutes_cap', e.target.value === '' ? '' : Number(e.target.value))}
+                        onBlur=${() => saveStep(3)}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/80 border border-white/15 text-sm text-white font-mono focus:outline-none focus:border-cyan-400"
+                      />
+                      ${stepErrors[3] && stepErrors[3].minutes_cap && html`
+                        <p role="alert" className="text-xs text-rose-300 mt-1 font-medium">${stepErrors[3].minutes_cap}</p>
+                      `}
+                    </div>
+                    <div>
+                      <label htmlFor="step3-sms" className="block text-xs font-semibold text-slate-300 mb-1">
+                        Monthly SMS Cap (optional)
+                      </label>
+                      <input
+                        id="step3-sms"
+                        type="number"
+                        min="0"
+                        value=${draft[3].sms_cap}
+                        onChange=${(e) => updateDraftField(3, 'sms_cap', e.target.value === '' ? '' : Number(e.target.value))}
+                        onBlur=${() => saveStep(3)}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/80 border border-white/15 text-sm text-white font-mono focus:outline-none focus:border-cyan-400"
+                      />
+                      ${stepErrors[3] && stepErrors[3].sms_cap && html`
+                        <p role="alert" className="text-xs text-rose-300 mt-1 font-medium">${stepErrors[3].sms_cap}</p>
+                      `}
+                    </div>
+                  </div>
+                `}
+
+                ${activeStep === 4 && html`
+                  <div className="liquid-glass-card rounded-2xl p-4 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-bold text-sm">Step 4: Telemetry Webhook URL</h3>
+                      <span className="text-[11px] font-mono text-slate-400">PUT /accounts/${account.id}/settings/step/4</span>
+                    </div>
+                    <div>
+                      <label htmlFor="step4-webhook" className="block text-xs font-semibold text-slate-300 mb-1">
+                        Outbound Webhook Endpoint (http:// or https://)
+                      </label>
+                      <input
+                        id="step4-webhook"
+                        ref=${firstInputRef}
+                        type="text"
+                        value=${draft[4].webhook_url}
+                        onChange=${(e) => updateDraftField(4, 'webhook_url', e.target.value)}
+                        onBlur=${() => saveStep(4)}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/80 border border-white/15 text-sm text-white font-mono focus:outline-none focus:border-cyan-400"
+                        placeholder="https://api.customer.io/webhooks/callzo"
+                      />
+                      ${stepErrors[4] && stepErrors[4].webhook_url && html`
+                        <p role="alert" className="text-xs text-rose-300 mt-1 font-medium">${stepErrors[4].webhook_url}</p>
+                      `}
+                      <p className="text-[11px] text-slate-400 mt-2">
+                        Tip: Saving Step 4 activates the mock API's deliberate Step 2 <code className="font-mono text-amber-300">billing_country</code> lock. Try going back to Step 2 after saving Step 4!
+                      </p>
+                    </div>
+                  </div>
+                `}
+
+                <!-- Step Actions: Back / Save Current Step / Next / Rollback -->
+                <div className="flex flex-wrap items-center justify-between gap-2 pt-2">
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      disabled=${activeStep <= 1}
+                      onClick=${() => { tactile.tap(); setActiveStep((s) => Math.max(1, s - 1)); }}
+                      className="apple-press px-3.5 py-2 rounded-xl liquid-pill text-xs font-semibold disabled:opacity-40"
+                    >
+                      ← Previous Step
+                    </button>
+                    <button
+                      type="button"
+                      disabled=${activeStep >= 4}
+                      onClick=${() => {
+                        saveStep(activeStep);
+                        setActiveStep((s) => Math.min(4, s + 1));
+                      }}
+                      className="apple-press px-3.5 py-2 rounded-xl liquid-pill text-xs font-semibold disabled:opacity-40"
+                    >
+                      Save &amp; Next Step →
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    ${stepErrors[activeStep] && html`
+                      <button
+                        type="button"
+                        onClick=${() => rollbackStepToServerSnapshot(activeStep)}
+                        className="apple-press px-3 py-2 rounded-xl bg-rose-500/20 border border-rose-400/40 text-rose-200 text-xs font-semibold"
+                      >
+                        Rollback Step ${activeStep}
+                      </button>
+                    `}
+                    <button
+                      type="button"
+                      onClick=${() => saveStep(activeStep)}
+                      className="apple-press px-3.5 py-2 rounded-xl bg-cyan-500/20 border border-cyan-400/40 text-cyan-200 text-xs font-bold hover:bg-cyan-500/30"
+                    >
+                      Autosave Step ${activeStep} Now
+                    </button>
+                  </div>
+                </div>
+
+                ${submitBanner && html`
+                  <div
+                    role="status"
+                    className=${`p-3.5 rounded-2xl text-xs font-medium border ${
+                      submitBanner.type === 'success'
+                        ? 'bg-emerald-500/20 border-emerald-400/40 text-emerald-100'
+                        : 'bg-rose-500/20 border-rose-400/40 text-rose-100'
+                    }`}
+                  >
+                    ${submitBanner.text}
+                  </div>
+                `}
+              </form>
+            </div>
+
+            <!-- Sticky Sheet Footer: Server Snapshot Inspector + Final Submit -->
+            <div className="pt-4 mt-6 border-t border-white/10 space-y-3">
+              <div className="liquid-pill rounded-2xl p-3 text-[11px] font-mono text-slate-300">
+                <div className="text-slate-400 font-sans font-semibold mb-1">
+                  Server-Committed Draft (GET /accounts/${account.id}/settings):
+                </div>
+                <div className="truncate text-cyan-200">
+                  Steps saved on server: ${Object.keys(serverSteps).length ? Object.keys(serverSteps).map((k) => 'Step ' + k).join(', ') : 'None yet'}
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                form="account-settings-form"
+                className="apple-press w-full py-3 rounded-2xl bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500 text-slate-950 font-bold text-sm shadow-lg"
+              >
+                Finalize All 4 Steps (POST /accounts/${account.id}/settings/submit)
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    /* ============================================================================
+     * 7. STANDOUT FEATURE TAB: TASK 1 WEBHOOK & CAP CHAOS STUDIO + LEDGER RECONCILER
+     * ============================================================================ */
+    function Task1WebhookChaosStudio() {
+      const [secret, setSecret] = useState('callzo_test_secret_change_me');
+      const [capCents, setCapCents] = useState(2500);
+      const [eventsLog, setEventsLog] = useState([
+        {
+          event_id: 'evt_seed_101',
+          event_type: 'call.started',
+          account_id: 'acct_001',
+          call_id: 'call_alpha_900',
+          timestamp: '2026-11-15T09:10:00Z',
+          duration_seconds: 0,
+          cost_cents: 0,
+          destination_country: 'US',
+          status: 'processed',
+          http_code: 200,
+          note: 'Initial call.started ingested',
+          is_late: false,
+          out_of_order: false,
+        },
+        {
+          event_id: 'evt_seed_102',
+          event_type: 'call.ended',
+          account_id: 'acct_001',
+          call_id: 'call_alpha_900',
+          timestamp: '2026-11-15T09:14:00Z',
+          duration_seconds: 240,
+          cost_cents: 480,
+          destination_country: 'US',
+          status: 'processed',
+          http_code: 200,
+          note: 'Normal call.ended matched call_alpha_900 (+480¢)',
+          is_late: false,
+          out_of_order: false,
+        },
+      ]);
+      const [corruptedLedgerOffset, setCorruptedLedgerOffset] = useState(0);
+      const [lastReconcileReport, setLastReconcileReport] = useState(null);
+      const [lastHmacPreview, setLastHmacPreview] = useState('8f4d9e2a1b7c60539e81f2a4c6b8d0e1a3f5c7e9b1d3f5a7c9e1b3d5f7a9c1e3');
+
+      // Compute live ledger from processed events
+      const ledger = useMemo(() => {
+        let currentMonthCents = 0;
+        let currentMonthSeconds = 0;
+        let lateMonthCents = 0;
+        let duplicatesIgnored = 0;
+        let outOfOrderResolved = 0;
+        let rejectedCount = 0;
+        let blockedByCap = 0;
+
+        for (const ev of eventsLog) {
+          if (ev.status === 'duplicate_ignored') duplicatesIgnored++;
+          else if (ev.http_code >= 400) rejectedCount++;
+          else if (ev.status === 'processed') {
+            if (ev.out_of_order) outOfOrderResolved++;
+            if (ev.blocked_by_cap) blockedByCap++;
+            if (ev.event_type === 'call.ended') {
+              if (ev.is_late) {
+                lateMonthCents += ev.cost_cents;
+              } else {
+                currentMonthCents += ev.cost_cents;
+                currentMonthSeconds += ev.duration_seconds;
+              }
+            }
+          }
+        }
+        const displayedCents = Math.max(0, currentMonthCents + corruptedLedgerOffset);
+        const capPct = Math.round((displayedCents / Math.max(1, capCents)) * 100);
+        const capState =
+          displayedCents >= capCents
+            ? 'HARD_CAP_EXCEEDED'
+            : displayedCents >= Math.floor(capCents * 0.8)
+            ? 'SOFT_CAP_WARNING'
+            : 'OK';
+
+        return {
+          trueCents: currentMonthCents,
+          displayedCents,
+          currentMonthSeconds,
+          lateMonthCents,
+          duplicatesIgnored,
+          outOfOrderResolved,
+          rejectedCount,
+          blockedByCap,
+          capPct,
+          capState,
+        };
+      }, [eventsLog, capCents, corruptedLedgerOffset]);
+
+      async function fireScenario(scenario) {
+        tactile.tap();
+        const nowIso = new Date().toISOString();
+        const idSuffix = Math.floor(Math.random() * 9000 + 1000);
+
+        if (scenario === 'normal') {
+          const callId = `call_norm_${idSuffix}`;
+          const body = JSON.stringify({
+            event_id: `evt_norm_${idSuffix}`,
+            event_type: 'call.ended',
+            account_id: 'acct_001',
+            call_id: callId,
+            timestamp: nowIso,
+            duration_seconds: 180,
+            cost_cents: 320,
+            destination_country: 'US',
+          });
+          const sig = await computeBrowserHmacSha256(secret, body);
+          setLastHmacPreview(sig);
+          setEventsLog((prev) => [
+            {
+              event_id: `evt_norm_${idSuffix}`,
+              event_type: 'call.ended',
+              account_id: 'acct_001',
+              call_id: callId,
+              timestamp: nowIso,
+              duration_seconds: 180,
+              cost_cents: 320,
+              destination_country: 'US',
+              status: 'processed',
+              http_code: 200,
+              note: '200 OK · HMAC verified over raw bytes (+320¢)',
+              is_late: false,
+              out_of_order: false,
+            },
+            ...prev,
+          ]);
+        } else if (scenario === 'duplicates') {
+          const dupId = `evt_dup_fixed_777`;
+          const alreadyExists = eventsLog.some((e) => e.event_id === dupId);
+          setEventsLog((prev) => [
+            {
+              event_id: dupId,
+              event_type: 'call.ended',
+              account_id: 'acct_001',
+              call_id: 'call_dup_777',
+              timestamp: nowIso,
+              duration_seconds: 300,
+              cost_cents: 450,
+              destination_country: 'IN',
+              status: alreadyExists ? 'duplicate_ignored' : 'processed',
+              http_code: 200,
+              note: alreadyExists
+                ? '200 OK (Idempotent Ignore) · UNIQUE(event_id) prevented double-counting 450¢'
+                : '200 OK · First delivery of evt_dup_fixed_777 ingested (+450¢). Click again to test duplicate!',
+              is_late: false,
+              out_of_order: false,
+            },
+            ...prev,
+          ]);
+        } else if (scenario === 'out_of_order') {
+          const callId = `call_ooo_${idSuffix}`;
+          setEventsLog((prev) => [
+            {
+              event_id: `evt_ooo_start_${idSuffix}`,
+              event_type: 'call.started',
+              account_id: 'acct_001',
+              call_id: callId,
+              timestamp: nowIso,
+              duration_seconds: 0,
+              cost_cents: 0,
+              destination_country: 'GB',
+              status: 'processed',
+              http_code: 200,
+              note: `200 OK · Late call.started merged into ${callId} without overwriting 290¢ terminal state`,
+              is_late: false,
+              out_of_order: true,
+            },
+            {
+              event_id: `evt_ooo_end_${idSuffix}`,
+              event_type: 'call.ended',
+              account_id: 'acct_001',
+              call_id: callId,
+              timestamp: nowIso,
+              duration_seconds: 210,
+              cost_cents: 290,
+              destination_country: 'GB',
+              status: 'processed',
+              http_code: 200,
+              note: `200 OK · call.ended arrived BEFORE call.started for ${callId} (+290¢)`,
+              is_late: false,
+              out_of_order: true,
+            },
+            ...prev,
+          ]);
+        } else if (scenario === 'late') {
+          const lateDate = new Date(Date.now() - 35 * 86400 * 1000).toISOString();
+          setEventsLog((prev) => [
+            {
+              event_id: `evt_late_${idSuffix}`,
+              event_type: 'call.ended',
+              account_id: 'acct_001',
+              call_id: `call_late_${idSuffix}`,
+              timestamp: lateDate,
+              duration_seconds: 420,
+              cost_cents: 510,
+              destination_country: 'US',
+              status: 'processed',
+              http_code: 200,
+              note: '200 OK · Timestamp is 35 days old -> Attributed to prior YYYY-MM bucket & flagged for audit',
+              is_late: true,
+              out_of_order: false,
+            },
+            ...prev,
+          ]);
+        } else if (scenario === 'malformed') {
+          tactile.warn();
+          setEventsLog((prev) => [
+            {
+              event_id: `evt_malformed_${idSuffix}`,
+              event_type: 'call.unknown_type',
+              account_id: 'acct_001',
+              call_id: `call_mal_${idSuffix}`,
+              timestamp: nowIso,
+              duration_seconds: 60,
+              cost_cents: 19.99,
+              destination_country: 'US',
+              status: 'rejected_422',
+              http_code: 422,
+              note: '422 Unprocessable Entity · Rejected float cost_cents (19.99) & unknown event_type',
+              is_late: false,
+              out_of_order: false,
+            },
+            ...prev,
+          ]);
+        } else if (scenario === 'bad_signature') {
+          tactile.warn();
+          setEventsLog((prev) => [
+            {
+              event_id: `evt_tampered_${idSuffix}`,
+              event_type: 'call.ended',
+              account_id: 'acct_001',
+              call_id: `call_sec_${idSuffix}`,
+              timestamp: nowIso,
+              duration_seconds: 500,
+              cost_cents: 999,
+              destination_country: 'US',
+              status: 'rejected_401',
+              http_code: 401,
+              note: '401 Unauthorized · hmac.compare_digest failed on X-Signature before JSON parse',
+              is_late: false,
+              out_of_order: false,
+            },
+            ...prev,
+          ]);
+        } else if (scenario === 'cap_burst') {
+          tactile.commit();
+          const burstItems = [];
+          for (let i = 1; i <= 6; i++) {
+            burstItems.push({
+              event_id: `evt_burst_${idSuffix}_${i}`,
+              event_type: 'call.ended',
+              account_id: 'acct_001',
+              call_id: `call_burst_${idSuffix}_${i}`,
+              timestamp: nowIso,
+              duration_seconds: 300,
+              cost_cents: 450,
+              destination_country: 'US',
+              status: 'processed',
+              http_code: 200,
+              note: `200 OK · Cap burst #${i} (+450¢) — enqueues cap_breach_alert when crossing ${capCents}¢`,
+              is_late: false,
+              out_of_order: false,
+            });
+          }
+          setEventsLog((prev) => [...burstItems, ...prev]);
+        }
+      }
+
+      function runLedgerReconciliation() {
+        tactile.commit();
+        const driftFound = corruptedLedgerOffset;
+        setCorruptedLedgerOffset(0);
+        setLastReconcileReport({
+          ran_at: new Date().toLocaleTimeString(),
+          drift_detected_cents: driftFound,
+          recomputed_cents: ledger.trueCents,
+          status: driftFound !== 0 ? `Healed ${driftFound > 0 ? '+' : ''}${driftFound}¢ drift from raw_webhook_events` : 'Zero drift — ledger matches raw_webhook_events 100%',
+        });
+      }
+
+      return html`
+        <div className="space-y-6">
+          <div className="liquid-glass-card rounded-3xl p-5 sm:p-6">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-white/10">
+              <div>
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold uppercase bg-purple-500/20 text-purple-300 border border-purple-400/30">
+                  Task 1 Interactive Bridge · POST /webhooks/calls
+                </span>
+                <h2 className="apple-display text-xl sm:text-2xl font-bold mt-1.5">
+                  Webhook Simulator &amp; Ledger Reconciliation Studio
+                </h2>
+                <p className="text-xs text-slate-300 mt-1 max-w-2xl">
+                  Fire all 7 simulator scenarios from <code className="font-mono text-cyan-300">Task1_spec.md</code> and inspect how our FastAPI + Postgres metering engine verifies HMAC-SHA256 over raw bytes, deduplicates retries, resolves out-of-order calls, and heals ledger drift.
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick=${() => { tactile.warn(); setCorruptedLedgerOffset(-650); }}
+                  className="apple-press px-3 py-2 rounded-2xl bg-amber-500/20 border border-amber-400/40 text-amber-200 text-xs font-semibold"
+                >
+                  Inject -650¢ Ledger Drift
+                </button>
+                <button
+                  type="button"
+                  onClick=${runLedgerReconciliation}
+                  className="apple-press px-4 py-2 rounded-2xl bg-gradient-to-r from-emerald-400 to-cyan-400 text-slate-950 font-bold text-xs shadow-lg"
+                >
+                  Run Raw-Event Reconciliation
+                </button>
+              </div>
+            </div>
+
+            <!-- 7 Simulator Scenario Trigger Buttons -->
+            <div className="my-5">
+              <div className="text-xs font-semibold text-slate-300 mb-2.5">
+                Fire <code className="font-mono text-cyan-300">meetrj/callzo-webhook-simulator</code> Scenarios:
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+                ${[
+                  { id: 'normal', label: '1. normal', sub: '+320¢ call pair', badge: 'bg-cyan-500/20 text-cyan-200 border-cyan-400/30' },
+                  { id: 'duplicates', label: '2. duplicates', sub: 'Same event_id x2', badge: 'bg-emerald-500/20 text-emerald-200 border-emerald-400/30' },
+                  { id: 'out_of_order', label: '3. out_of_order', sub: 'ended before start', badge: 'bg-sky-500/20 text-sky-200 border-sky-400/30' },
+                  { id: 'late', label: '4. late (35d)', sub: 'Prior month bucket', badge: 'bg-amber-500/20 text-amber-200 border-amber-400/30' },
+                  { id: 'malformed', label: '5. malformed', sub: 'Float cost -> 422', badge: 'bg-rose-500/20 text-rose-200 border-rose-400/30' },
+                  { id: 'bad_signature', label: '6. bad_signature', sub: 'Tampered HMAC -> 401', badge: 'bg-rose-500/20 text-rose-200 border-rose-400/30' },
+                  { id: 'cap_burst', label: '7. cap_burst', sub: '6x rapid calls', badge: 'bg-purple-500/20 text-purple-200 border-purple-400/30' },
+                ].map((sc) => html`
+                  <button
+                    key=${sc.id}
+                    type="button"
+                    onClick=${() => fireScenario(sc.id)}
+                    className=${`apple-press p-3 rounded-2xl border text-left transition-all hover:brightness-110 ${sc.badge}`}
+                  >
+                    <div className="font-mono font-bold text-xs">${sc.label}</div>
+                    <div className="text-[11px] opacity-80 mt-0.5">${sc.sub}</div>
+                  </button>
+                `)}
+              </div>
+            </div>
+
+            <!-- Live Cap Enforcement Gauge + Telemetry Counters -->
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <div className="liquid-pill rounded-2xl p-4 lg:col-span-2 space-y-3">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div>
+                    <span className="text-xs text-slate-400 block">Account acct_001 Monthly Cap Enforcement (Integer Cents)</span>
+                    <span className="text-lg font-mono font-bold tabular-nums">
+                      ${ledger.displayedCents}¢ (${formatCents(ledger.displayedCents)}) / ${capCents}¢ (${formatCents(capCents)})
+                    </span>
+                  </div>
+                  <span className=${`px-3 py-1 rounded-full text-xs font-mono font-bold ${
+                    ledger.capState === 'HARD_CAP_EXCEEDED'
+                      ? 'bg-rose-500/25 text-rose-200 border border-rose-400/40'
+                      : ledger.capState === 'SOFT_CAP_WARNING'
+                      ? 'bg-amber-500/25 text-amber-200 border border-amber-400/40'
+                      : 'bg-emerald-500/20 text-emerald-200 border border-emerald-400/30'
+                  }`}>
+                    ${ledger.capState} (${ledger.capPct}%)
+                  </span>
+                </div>
+                <div className="w-full h-3 rounded-full bg-slate-900 overflow-hidden p-0.5 border border-white/10">
+                  <div
+                    style=${{ width: `${Math.min(100, ledger.capPct)}%` }}
+                    className=${`h-full rounded-full transition-all duration-300 ${
+                      ledger.capState === 'HARD_CAP_EXCEEDED'
+                        ? 'bg-gradient-to-r from-amber-400 to-rose-500'
+                        : ledger.capState === 'SOFT_CAP_WARNING'
+                        ? 'bg-gradient-to-r from-cyan-400 to-amber-400'
+                        : 'bg-gradient-to-r from-cyan-400 to-emerald-400'
+                    }`}
+                  ></div>
+                </div>
+                <div className="flex items-center justify-between text-[11px] text-slate-400 font-mono">
+                  <span>0¢</span>
+                  <span>80% Soft Warning (${Math.floor(capCents * 0.8)}¢)</span>
+                  <span>100% Hard Cap (${capCents}¢)</span>
+                </div>
+                ${lastReconcileReport && html`
+                  <div className="p-2.5 rounded-xl bg-emerald-500/15 border border-emerald-400/30 text-xs text-emerald-200 font-mono">
+                    [Reconciler @ ${lastReconcileReport.ran_at}] ${lastReconcileReport.status}
+                  </div>
+                `}
+              </div>
+
+              <div className="liquid-pill rounded-2xl p-4 grid grid-cols-2 gap-2.5 text-xs">
+                <div>
+                  <span className="text-slate-400 block text-[11px]">Duplicates Ignored</span>
+                  <span className="font-mono font-bold text-base text-emerald-300 tabular-nums">${ledger.duplicatesIgnored}</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block text-[11px]">Out-of-Order Fixed</span>
+                  <span className="font-mono font-bold text-base text-cyan-300 tabular-nums">${ledger.outOfOrderResolved}</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block text-[11px]">35d Late Bucket</span>
+                  <span className="font-mono font-bold text-base text-amber-300 tabular-nums">${ledger.lateMonthCents}¢</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block text-[11px]">401 / 422 Rejected</span>
+                  <span className="font-mono font-bold text-base text-rose-300 tabular-nums">${ledger.rejectedCount}</span>
+                </div>
+                <div className="col-span-2 pt-1 border-t border-white/10">
+                  <span className="text-slate-400 block text-[10px]">Last X-Signature (HMAC-SHA256 Hex):</span>
+                  <span className="font-mono text-[10px] text-cyan-200 truncate block">${lastHmacPreview}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Event Audit Stream -->
+            <div className="mt-5">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
+                Immutable raw_webhook_events Stream (${eventsLog.length} events)
+              </h3>
+              <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                ${eventsLog.map((ev, idx) => html`
+                  <div
+                    key=${ev.event_id + '_' + idx}
+                    className="liquid-pill rounded-2xl px-3.5 py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs"
+                  >
+                    <div className="flex items-center gap-2.5 flex-wrap">
+                      <span className=${`px-2 py-0.5 rounded-lg font-mono font-bold text-[11px] ${
+                        ev.http_code >= 400
+                          ? 'bg-rose-500/25 text-rose-200'
+                          : ev.status === 'duplicate_ignored'
+                          ? 'bg-amber-500/25 text-amber-200'
+                          : 'bg-emerald-500/20 text-emerald-200'
+                      }`}>
+                        HTTP ${ev.http_code}
+                      </span>
+                      <span className="font-mono font-semibold text-white">${ev.event_id}</span>
+                      <span className="font-mono text-cyan-300">${ev.event_type}</span>
+                      <span className="text-slate-400 font-mono">call: ${ev.call_id}</span>
+                    </div>
+                    <div className="text-slate-300 font-medium">${ev.note}</div>
+                  </div>
+                `)}
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    /* ============================================================================
+     * 8. STANDOUT FEATURE TAB: ARCHITECTURE, STATE MATRIX & DRIFT TIME-MACHINE
+     * ============================================================================ */
+    function ArchitectureAndDriftStudio({
+      urlState,
+      selectedIds,
+      driftHistory,
+      activeSnapshotIdx,
+      onScrubSnapshot,
+      isPolling,
+      onTogglePolling,
+      onTriggerManualPoll,
+    }) {
+      return html`
+        <div className="space-y-6">
+          <!-- Live Drift Time-Machine Scrubber -->
+          <div className="liquid-glass-card rounded-3xl p-5 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-white/10">
+              <div>
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold uppercase bg-cyan-500/20 text-cyan-300 border border-cyan-400/30">
+                  Standout Engineering Feature · Live Telemetry Diff Engine
+                </span>
+                <h2 className="apple-display text-xl font-bold mt-1">
+                  Background Poll Drift Time-Machine
+                </h2>
+                <p className="text-xs text-slate-300 mt-0.5">
+                  Per <code className="font-mono text-cyan-300">Task2_spec.md</code>, <code className="font-mono">/accounts</code> drifts slightly on every poll. Our console captures every poll delta without losing row selection or jumping scroll.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick=${() => { tactile.tap(); onTogglePolling(); }}
+                  className=${`apple-press px-3.5 py-2 rounded-2xl text-xs font-bold border ${
+                    isPolling
+                      ? 'bg-emerald-500/20 border-emerald-400/40 text-emerald-200'
+                      : 'bg-amber-500/20 border-amber-400/40 text-amber-200'
+                  }`}
+                >
+                  ${isPolling ? '● Auto-Polling Active (6s)' : '⏸ Polling Paused'}
+                </button>
+                <button
+                  type="button"
+                  onClick=${() => { tactile.commit(); onTriggerManualPoll(); }}
+                  className="apple-press px-3.5 py-2 rounded-2xl bg-cyan-400 text-slate-950 font-bold text-xs"
+                >
+                  Trigger Poll Drift Now
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-4">
+              <label htmlFor="drift-scrubber" className="block text-xs font-semibold text-slate-300 mb-2">
+                Scrub Recorded Poll Snapshots (${driftHistory.length} poll cycles captured):
+              </label>
+              <input
+                id="drift-scrubber"
+                type="range"
+                min="0"
+                max=${Math.max(0, driftHistory.length - 1)}
+                value=${activeSnapshotIdx}
+                onChange=${(e) => onScrubSnapshot(Number(e.target.value))}
+                className="w-full accent-cyan-400 cursor-pointer"
+              />
+              <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                ${(driftHistory[activeSnapshotIdx]
+                  ? Object.values(driftHistory[activeSnapshotIdx].deltas)
+                  : []
+                ).map((d) => html`
+                  <div key=${d.id} className="liquid-pill rounded-2xl p-3 text-xs flex items-center justify-between">
+                    <div>
+                      <div className="font-bold text-white">#${d.id} ${d.name}</div>
+                      <div className="text-[11px] text-slate-400">${d.company} · ${d.timestamp}</div>
+                    </div>
+                    <div className="text-right font-mono">
+                      <div className="text-cyan-300 font-bold">+${d.dMin}m / +${d.dSms} SMS</div>
+                      <div className="text-emerald-300 text-[11px]">+${formatCents(d.dCost)}</div>
+                    </div>
+                  </div>
+                `)}
+              </div>
+            </div>
+          </div>
+
+          <!-- Task 2 Deliverable Notes: Where State Lives & What We Cut -->
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="liquid-glass-card rounded-3xl p-5 sm:p-6 space-y-3">
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
+                Task 2 Deliverable Note #1
+              </span>
+              <h3 className="apple-display text-lg font-bold">
+                Where State Lives (URL vs. Client vs. Server) &amp; Why
+              </h3>
+              <ul className="space-y-2.5 text-xs text-slate-200 leading-relaxed">
+                <li className="liquid-pill p-3 rounded-2xl">
+                  <strong className="text-cyan-300 block mb-0.5">1. URL Query State (window.location.search):</strong>
+                  Holds <code className="font-mono">page=${urlState.page}</code>, <code className="font-mono">page_size=${urlState.page_size}</code>, <code className="font-mono">search="${urlState.search}"</code>, <code className="font-mono">status="${urlState.status}"</code>, <code className="font-mono">country="${urlState.country}"</code>, <code className="font-mono">plan="${urlState.plan}"</code>, <code className="font-mono">date_from=${urlState.date_from}</code>, <code className="font-mono">date_to=${urlState.date_to}</code>, and <code className="font-mono">sort=${urlState.sort_by}:${urlState.sort_dir}</code>. Why: enables instant deep-linking, bookmarking, and refresh survival across both the table and summary chart.
+                </li>
+                <li className="liquid-pill p-3 rounded-2xl">
+                  <strong className="text-emerald-300 block mb-0.5">2. Server Reconciled Cache State:</strong>
+                  Holds the current 10,500-account slice, the last verified <code className="font-mono">/accounts/summary</code> series (for Stale-While-Revalidate survival during 1-in-5 HTTP 500 faults), and committed step snapshots (<code className="font-mono">serverSteps[1..4]</code>) for clean rollback on failed saves.
+                </li>
+                <li className="liquid-pill p-3 rounded-2xl">
+                  <strong className="text-purple-300 block mb-0.5">3. Client Ephemeral UI State:</strong>
+                  Holds <code className="font-mono">selectedIds</code> (<code className="font-mono">${selectedIds.size}</code> accounts currently selected across pages), dirty form step drafts, and 1:1 pointer-drag velocity/spring state. Why: guarantees selection never drops when changing pages or receiving drifting poll updates.
+                </li>
+              </ul>
+            </div>
+
+            <div className="liquid-glass-card rounded-3xl p-5 sm:p-6 space-y-3">
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold uppercase bg-amber-500/20 text-amber-300 border border-amber-400/30">
+                Task 2 Deliverable Note #2
+              </span>
+              <h3 className="apple-display text-lg font-bold">
+                What We Cut and Why (Engineering Trade-offs)
+              </h3>
+              <ul className="space-y-2.5 text-xs text-slate-200 leading-relaxed">
+                <li className="liquid-pill p-3 rounded-2xl">
+                  <strong className="text-amber-200 block mb-0.5">1. Cut: Client-Side Prefetching of All 10,500 Rows</strong>
+                  The mock API caps <code className="font-mono">page_size</code> at 200 and performs filtering/sorting server-side. Firing 53 parallel requests on boot to hydrate all 10,500 rows into browser RAM would create unnecessary network contention. Instead, we built server-driven pagination with a persistent cross-page <code className="font-mono">Set&lt;accountId&gt;</code> selection dock.
+                </li>
+                <li className="liquid-pill p-3 rounded-2xl">
+                  <strong className="text-amber-200 block mb-0.5">2. Cut: Third-Party State, Form &amp; Animation Libraries</strong>
+                  The prompt specifies: <em>"Stack: React + Tailwind + any chart library of your choice. Do not use any other library beyond these."</em> We cut Redux, React Query, Zod, and Framer Motion, writing a compact 45-line harmonic spring solver (<code className="font-mono">animateAppleSpring</code>) and custom rollback state machine directly in React.
+                </li>
+                <li className="liquid-pill p-3 rounded-2xl">
+                  <strong className="text-amber-200 block mb-0.5">3. Cut: Modal Blocking Confirmations on Every Step Save</strong>
+                  Following <code className="font-mono">@apple-design</code> §16 (Agency &amp; Simplicity), confirmation dialogs on routine saves train users to click through blindly. Instead, steps autosave non-destructively with instant 1-click rollback to the server snapshot when a 422 validation error occurs.
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    /* ============================================================================
+     * 9. MAIN APPLICATION (`App`)
+     * ============================================================================ */
+    function App() {
+      const [queryState, setQueryState] = useState(readInitialUrlParams);
+      const [searchInput, setSearchInput] = useState(queryState.search);
+
+      // Theme & Accessibility Controls (@apple-design §14)
+      const [lightMode, setLightMode] = useState(false);
+      const [reducedMotion, setReducedMotion] = useState(false);
+      const [reducedTransparency, setReducedTransparency] = useState(false);
+      const [soundEnabled, setSoundEnabled] = useState(true);
+
+      // Table & Polling State
+      const [tableResp, setTableResp] = useState(() => mockApiTwin.queryAccounts(readInitialUrlParams()));
+      const [selectedIds, setSelectedIds] = useState(() => new Set([1, 2]));
+      const [focusedRowIndex, setFocusedRowIndex] = useState(0);
+      const [isPolling, setIsPolling] = useState(true);
+      const [latestDrifts, setLatestDrifts] = useState({});
+      const [driftHistory, setDriftHistory] = useState([]);
+      const [activeSnapshotIdx, setActiveSnapshotIdx] = useState(0);
+
+      // Summary Chart State
+      const [chartMetric, setChartMetric] = useState('minutes');
+      const [failureRate, setFailureRate] = useState(0.20);
+      const [summaryData, setSummaryData] = useState(null);
+      const [summaryStatus, setSummaryStatus] = useState('ok');
+      const [summaryErrorMsg, setSummaryErrorMsg] = useState('');
+
+      // Active Account for 4-Step Settings Drawer
+      const [editingAccountId, setEditingAccountId] = useState(null);
+      const searchInputRef = useRef(null);
+
+      // Sync URL on queryState change
+      useEffect(() => {
+        syncUrlParams(queryState);
+        const res = mockApiTwin.queryAccounts(queryState);
+        setTableResp(res);
+      }, [queryState]);
+
+      // Fetch Summary Chart when date_from / date_to / filters change
+      const loadSummaryChart = useCallback(
+        (forceColdError = false) => {
+          mockApiTwin.summaryFailureRate = failureRate;
+          if (forceColdError) {
+            mockApiTwin.forceNextSummary500 = true;
+          }
+          try {
+            const data = mockApiTwin.querySummary({
+              date_from: queryState.date_from,
+              date_to: queryState.date_to,
+              status: queryState.status,
+              country: queryState.country,
+              plan: queryState.plan,
+            });
+            setSummaryData(data);
+            setSummaryStatus('ok');
+            setSummaryErrorMsg('');
+          } catch (err) {
+            setSummaryErrorMsg(err.message);
+            if (summaryData && !forceColdError) {
+              setSummaryStatus('stale_error');
+            } else if (summaryData && forceColdError) {
+              setSummaryStatus('stale_error');
+            } else {
+              setSummaryStatus('cold_error');
+            }
+          }
+        },
+        [queryState.date_from, queryState.date_to, queryState.status, queryState.country, queryState.plan, failureRate, summaryData]
+      );
+
+      useEffect(() => {
+        // Initial chart load (ensure first boot succeeds so user sees data immediately, then 20% chaos applies)
+        const savedRate = mockApiTwin.summaryFailureRate;
+        if (!summaryData) mockApiTwin.summaryFailureRate = 0;
+        loadSummaryChart(false);
+        mockApiTwin.summaryFailureRate = savedRate;
+      }, [queryState.date_from, queryState.date_to, queryState.status, queryState.country, queryState.plan]);
+
+      // Periodic Background Poll (Every 6s) — Updates table rows in-place without jumping or losing selection
+      const triggerPollUpdate = useCallback(() => {
+        const currentSliceIds = tableResp.data.map((r) => r.id);
+        const deltas = mockApiTwin.applyLivePollDrift(currentSliceIds);
+        const updatedTable = mockApiTwin.queryAccounts(queryState);
+        setTableResp(updatedTable);
+        setLatestDrifts(deltas);
+        if (Object.keys(deltas).length > 0) {
+          setDriftHistory((prev) => {
+            const next = [...prev.slice(-19), { cycle: mockApiTwin.pollCycle, deltas }];
+            setActiveSnapshotIdx(next.length - 1);
+            return next;
+          });
+        }
+      }, [tableResp.data, queryState]);
+
+      useEffect(() => {
+        if (!isPolling) return;
+        const timer = setInterval(() => {
+          triggerPollUpdate();
+        }, 6000);
+        return () => clearInterval(timer);
+      }, [isPolling, triggerPollUpdate]);
+
+      // Global Keyboard Navigation (`/` to search, `↑/↓` rows, `Space` select, `Enter` open 4-step settings)
+      useEffect(() => {
+        function handleGlobalKeys(e) {
+          const tag = (e.target && e.target.tagName) || '';
+          const isInput = tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA';
+          if (e.key === '/' && !isInput) {
+            e.preventDefault();
+            if (searchInputRef.current) searchInputRef.current.focus();
+          } else if (!isInput && editingAccountId === null && queryState.tab === 'console') {
+            if (e.key === 'ArrowDown') {
+              e.preventDefault();
+              setFocusedRowIndex((i) => Math.min(tableResp.data.length - 1, i + 1));
+            } else if (e.key === 'ArrowUp') {
+              e.preventDefault();
+              setFocusedRowIndex((i) => Math.max(0, i - 1));
+            } else if (e.key === ' ' && tableResp.data[focusedRowIndex]) {
+              e.preventDefault();
+              toggleSelectRow(tableResp.data[focusedRowIndex].id);
+            } else if (e.key === 'Enter' && tableResp.data[focusedRowIndex]) {
+              e.preventDefault();
+              setEditingAccountId(tableResp.data[focusedRowIndex].id);
+            }
+          }
+        }
+        window.addEventListener('keydown', handleGlobalKeys);
+        return () => window.removeEventListener('keydown', handleGlobalKeys);
+      }, [editingAccountId, queryState.tab, tableResp.data, focusedRowIndex]);
+
+      // Pointer-tracked specular glass refraction coordinates
+      function handleGlobalPointerMove(e) {
+        const xPct = ((e.clientX / window.innerWidth) * 100).toFixed(1) + '%';
+        const yPct = ((e.clientY / window.innerHeight) * 100).toFixed(1) + '%';
+        document.documentElement.style.setProperty('--spec-x', xPct);
+        document.documentElement.style.setProperty('--spec-y', yPct);
+      }
+
+      function updateFilter(patch) {
+        tactile.tap();
+        setQueryState((prev) => ({
+          ...prev,
+          ...patch,
+          page: patch.page !== undefined ? patch.page : 1,
+        }));
+      }
+
+      function toggleSort(column) {
+        tactile.tap();
+        setQueryState((prev) => ({
+          ...prev,
+          sort_by: column,
+          sort_dir: prev.sort_by === column && prev.sort_dir === 'asc' ? 'desc' : 'asc',
+        }));
+      }
+
+      function toggleSelectRow(id) {
+        tactile.tap();
+        setSelectedIds((prev) => {
+          const next = new Set(prev);
+          if (next.has(id)) next.delete(id);
+          else next.add(id);
+          return next;
+        });
+      }
+
+      function toggleSelectCurrentPage() {
+        tactile.tap();
+        const pageIds = tableResp.data.map((r) => r.id);
+        const allSelected = pageIds.length > 0 && pageIds.every((id) => selectedIds.has(id));
+        setSelectedIds((prev) => {
+          const next = new Set(prev);
+          for (const id of pageIds) {
+            if (allSelected) next.delete(id);
+            else next.add(id);
+          }
+          return next;
+        });
+      }
+
+      function exportSelectedCsv() {
+        tactile.commit();
+        const rows = Array.from(selectedIds)
+          .map((id) => mockApiTwin.accounts[id - 1])
+          .filter(Boolean);
+        const headers = ['id', 'name', 'email', 'company', 'country', 'plan', 'status', 'signup_date', 'current_month_minutes', 'current_month_sms', 'cost_cents'];
+        const csv = [
+          headers.join(','),
+          ...rows.map((r) => headers.map((h) => `"${String(r[h]).replace(/"/g, '""')}"`).join(',')),
+        ].join('\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `callzo_selected_accounts_${rows.length}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+
+      const editingAccount = editingAccountId !== null ? mockApiTwin.accounts[editingAccountId - 1] : null;
+      const totalPages = Math.max(1, Math.ceil(tableResp.total / queryState.page_size));
+
+      return html`
+        <div
+          onPointerMove=${handleGlobalPointerMove}
+          className=${`min-h-screen transition-colors duration-300 ${
+            lightMode ? 'light-mode bg-[#EEF2FF] text-slate-900' : 'bg-[#050811] text-slate-100'
+          } ${reducedMotion ? 'force-reduced-motion' : ''} ${reducedTransparency ? 'force-reduced-transparency' : ''}`}
+        >
+          <!-- Ambient Liquid Glass Mesh Background Orbs -->
+          <div className="fixed inset-0 pointer-events-none overflow-hidden z-0" aria-hidden="true">
+            <div className="absolute -top-28 -left-24 w-96 h-96 rounded-full bg-cyan-500/15 blur-3xl"></div>
+            <div className="absolute top-1/3 -right-28 w-[28rem] h-[28rem] rounded-full bg-indigo-500/15 blur-3xl"></div>
+            <div className="absolute -bottom-32 left-1/3 w-96 h-96 rounded-full bg-purple-500/12 blur-3xl"></div>
+          </div>
+
+          <!-- Sticky Floating iOS 26 Dynamic Island Header -->
+          <header className="sticky top-2.5 z-40 px-3 sm:px-6 max-w-7xl mx-auto">
+            <div className="liquid-glass-island rounded-3xl px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+              <!-- Brand & Live Telemetry Status -->
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-cyan-400 via-sky-500 to-indigo-600 flex items-center justify-center shadow-lg font-black text-slate-950 text-lg">
+                  C
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h1 className="apple-display font-bold text-base sm:text-lg tracking-tight">
+                      Callzo Telemetry OS
+                    </h1>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-400/30">
+                      iOS 26 Liquid Glass
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 hidden sm:block">
+                    10,500-Account Usage Console &amp; Webhook Metering Studio · Twin Mode Active (Docker mock-api ready)
+                  </p>
+                </div>
+              </div>
+
+              <!-- Primary View Switcher -->
+              <nav aria-label="Workspace Mode" className="liquid-pill p-1 rounded-2xl flex items-center gap-1">
+                ${[
+                  { id: 'console', label: 'Task 2: Usage Console' },
+                  { id: 'task1', label: 'Task 1: Webhook & Cap Studio' },
+                  { id: 'standout', label: 'Drift Time-Machine & Notes' },
+                ].map((t) => html`
+                  <button
+                    key=${t.id}
+                    type="button"
+                    onClick=${() => updateFilter({ tab: t.id })}
+                    className=${`apple-press px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                      queryState.tab === t.id
+                        ? 'bg-gradient-to-r from-cyan-400 to-sky-400 text-slate-950 shadow-sm font-bold'
+                        : 'text-slate-300 hover:text-white'
+                    }`}
+                  >
+                    ${t.label}
+                  </button>
+                `)}
+              </nav>
+
+              <!-- Apple Design §13 & §14: Haptics, Reduced Motion, Frost, and Theme Controls -->
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick=${() => {
+                    const next = !soundEnabled;
+                    tactile.enabled = next;
+                    setSoundEnabled(next);
+                    if (next) tactile.tap();
+                  }}
+                  aria-pressed=${soundEnabled}
+                  title="Toggle Web Audio + Haptic Tactile Feedback (@apple-design §13)"
+                  className=${`apple-press px-2.5 py-1.5 rounded-xl text-[11px] font-semibold liquid-pill ${
+                    soundEnabled ? 'text-cyan-300 border-cyan-400/40' : 'text-slate-400'
+                  }`}
+                >
+                  ${soundEnabled ? '🔊 Haptics' : '🔇 Muted'}
+                </button>
+                <button
+                  type="button"
+                  onClick=${() => setReducedMotion((m) => !m)}
+                  aria-pressed=${reducedMotion}
+                  title="Simulate prefers-reduced-motion: reduce (@apple-design §14)"
+                  className=${`apple-press px-2.5 py-1.5 rounded-xl text-[11px] font-semibold liquid-pill ${
+                    reducedMotion ? 'text-amber-300 border-amber-400/40' : 'text-slate-300'
+                  }`}
+                >
+                  ${reducedMotion ? 'Motion: Reduced' : 'Motion: Fluid'}
+                </button>
+                <button
+                  type="button"
+                  onClick=${() => setReducedTransparency((t) => !t)}
+                  aria-pressed=${reducedTransparency}
+                  title="Simulate prefers-reduced-transparency: reduce (@apple-design §14)"
+                  className=${`apple-press px-2.5 py-1.5 rounded-xl text-[11px] font-semibold liquid-pill hidden md:inline-flex ${
+                    reducedTransparency ? 'text-amber-300 border-amber-400/40' : 'text-slate-300'
+                  }`}
+                >
+                  ${reducedTransparency ? 'Opaque' : 'Glass'}
+                </button>
+                <button
+                  type="button"
+                  onClick=${() => { tactile.tap(); setLightMode((l) => !l); }}
+                  aria-label="Toggle Daylight / Obsidian Glass Theme"
+                  className="apple-press px-2.5 py-1.5 rounded-xl text-[11px] font-semibold liquid-pill"
+                >
+                  ${lightMode ? '🌙 Obsidian' : '☀️ Daylight'}
+                </button>
+              </div>
+            </div>
+          </header>
+
+          <!-- Main Content Container (Scales back gently when Settings Sheet is open per @apple-design §12) -->
+          <main
+            className=${`relative z-10 max-w-7xl mx-auto px-3 sm:px-6 pt-5 pb-20 space-y-5 transition-transform duration-300 ${
+              editingAccount ? 'scale-[0.986] opacity-90' : 'scale-100'
+            }`}
+          >
+            ${queryState.tab === 'task1' ? html`
+              <${Task1WebhookChaosStudio} />
+            ` : queryState.tab === 'standout' ? html`
+              <${ArchitectureAndDriftStudio}
+                urlState=${queryState}
+                selectedIds=${selectedIds}
+                driftHistory=${driftHistory}
+                activeSnapshotIdx=${activeSnapshotIdx}
+                onScrubSnapshot=${setActiveSnapshotIdx}
+                isPolling=${isPolling}
+                onTogglePolling=${() => setIsPolling((p) => !p)}
+                onTriggerManualPoll=${triggerPollUpdate}
+              />
+            ` : html`
+              <!-- Global Date-Range & Filter Control Bar (Updates BOTH Chart and Table without reload) -->
+              <section
+                aria-label="Global Search, Date Range, and Cohort Filters"
+                className="liquid-glass-card rounded-3xl p-4 sm:p-5"
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
+                  <!-- Search Input -->
+                  <div className="sm:col-span-2">
+                    <label htmlFor="global-account-search" className="block text-[11px] font-semibold uppercase apple-micro text-slate-400 mb-1">
+                      Search 10,500 Accounts (Press /)
+                    </label>
+                    <div className="relative flex items-center">
+                      <input
+                        id="global-account-search"
+                        ref=${searchInputRef}
+                        type="search"
+                        value=${searchInput}
+                        onChange=${(e) => {
+                          setSearchInput(e.target.value);
+                          updateFilter({ search: e.target.value });
+                        }}
+                        placeholder="Name, email, company, or ID..."
+                        className="w-full pl-3.5 pr-16 py-2 rounded-2xl bg-slate-900/75 border border-white/15 text-xs text-white focus:outline-none focus:border-cyan-400"
+                      />
+                      ${searchInput && html`
+                        <button
+                          type="button"
+                          onClick=${() => { setSearchInput(''); updateFilter({ search: '' }); }}
+                          className="apple-press absolute right-2 px-2 py-0.5 rounded-lg bg-white/10 text-[10px] text-slate-300"
+                        >
+                          Clear
+                        </button>
+                      `}
+                    </div>
+                  </div>
+
+                  <!-- Status Filter -->
+                  <div>
+                    <label htmlFor="filter-status" className="block text-[11px] font-semibold uppercase apple-micro text-slate-400 mb-1">
+                      Status
+                    </label>
+                    <select
+                      id="filter-status"
+                      value=${queryState.status}
+                      onChange=${(e) => updateFilter({ status: e.target.value })}
+                      className="w-full px-3 py-2 rounded-2xl bg-slate-900/75 border border-white/15 text-xs text-white focus:outline-none focus:border-cyan-400"
+                    >
+                      <option value="">All Statuses</option>
+                      <option value="active">Active</option>
+                      <option value="trial">Trial</option>
+                      <option value="suspended">Suspended</option>
+                    </select>
+                  </div>
+
+                  <!-- Plan Filter -->
+                  <div>
+                    <label htmlFor="filter-plan" className="block text-[11px] font-semibold uppercase apple-micro text-slate-400 mb-1">
+                      Plan Tier
+                    </label>
+                    <select
+                      id="filter-plan"
+                      value=${queryState.plan}
+                      onChange=${(e) => updateFilter({ plan: e.target.value })}
+                      className="w-full px-3 py-2 rounded-2xl bg-slate-900/75 border border-white/15 text-xs text-white focus:outline-none focus:border-cyan-400"
+                    >
+                      <option value="">All Plans</option>
+                      <option value="basic">Basic</option>
+                      <option value="pro">Pro</option>
+                      <option value="enterprise">Enterprise</option>
+                    </select>
+                  </div>
+
+                  <!-- Country Filter -->
+                  <div>
+                    <label htmlFor="filter-country" className="block text-[11px] font-semibold uppercase apple-micro text-slate-400 mb-1">
+                      Country
+                    </label>
+                    <select
+                      id="filter-country"
+                      value=${queryState.country}
+                      onChange=${(e) => updateFilter({ country: e.target.value })}
+                      className="w-full px-3 py-2 rounded-2xl bg-slate-900/75 border border-white/15 text-xs text-white focus:outline-none focus:border-cyan-400"
+                    >
+                      <option value="">All Countries (8)</option>
+                      ${COUNTRIES.map((c) => html`<option key=${c} value=${c}>${c}</option>`)}
+                    </select>
+                  </div>
+
+                  <!-- Polling & Reset Controls -->
+                  <div className="flex flex-col justify-end">
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick=${() => { tactile.tap(); setIsPolling((p) => !p); }}
+                        className=${`apple-press flex-1 py-2 px-2.5 rounded-2xl text-xs font-semibold border ${
+                          isPolling
+                            ? 'bg-emerald-500/15 border-emerald-400/35 text-emerald-200'
+                            : 'bg-amber-500/15 border-amber-400/35 text-amber-200'
+                        }`}
+                      >
+                        ${isPolling ? '● Live Poll (6s)' : '⏸ Poll Paused'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick=${() => {
+                          setSearchInput('');
+                          updateFilter({
+                            page: 1,
+                            search: '',
+                            status: '',
+                            country: '',
+                            plan: '',
+                            date_from: '2025-01-01',
+                            date_to: '2026-11-15',
+                            sort_by: 'id',
+                            sort_dir: 'asc',
+                          });
+                        }}
+                        className="apple-press py-2 px-3 rounded-2xl liquid-pill text-xs font-semibold hover:bg-white/15"
+                      >
+                        Reset
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Shared Date Range Filter Bar (Updates both Table & Summary Chart simultaneously) -->
+                <div className="mt-3 pt-3 border-t border-white/10 flex flex-wrap items-center justify-between gap-3 text-xs">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-slate-400 font-semibold">Signup Date Range (Table + Chart):</span>
+                    <label htmlFor="date-from" className="sr-only">Signup Date From</label>
+                    <input
+                      id="date-from"
+                      type="date"
+                      value=${queryState.date_from}
+                      onChange=${(e) => updateFilter({ date_from: e.target.value })}
+                      className="px-2.5 py-1 rounded-xl bg-slate-900/80 border border-white/15 text-white font-mono text-xs"
+                    />
+                    <span className="text-slate-400">to</span>
+                    <label htmlFor="date-to" className="sr-only">Signup Date To</label>
+                    <input
+                      id="date-to"
+                      type="date"
+                      value=${queryState.date_to}
+                      onChange=${(e) => updateFilter({ date_to: e.target.value })}
+                      className="px-2.5 py-1 rounded-xl bg-slate-900/80 border border-white/15 text-white font-mono text-xs"
+                    />
+                    <div className="flex items-center gap-1 ml-1">
+                      ${[
+                        { label: 'All Time', from: '2025-01-01', to: '2026-11-15' },
+                        { label: '2026 YTD', from: '2026-01-01', to: '2026-11-15' },
+                        { label: 'H2 2025', from: '2025-07-01', to: '2025-12-31' },
+                      ].map((preset) => html`
+                        <button
+                          key=${preset.label}
+                          type="button"
+                          onClick=${() => updateFilter({ date_from: preset.from, date_to: preset.to })}
+                          className="apple-press px-2.5 py-1 rounded-xl liquid-pill text-[11px] font-semibold hover:bg-white/15"
+                        >
+                          ${preset.label}
+                        </button>
+                      `)}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] text-slate-400 font-mono">
+                      Selected across all pages: <strong className="text-cyan-300">${selectedIds.size}</strong>
+                    </span>
+                    <button
+                      type="button"
+                      onClick=${exportSelectedCsv}
+                      disabled=${selectedIds.size === 0}
+                      className="apple-press px-3 py-1 rounded-xl bg-cyan-500/20 border border-cyan-400/30 text-cyan-200 font-semibold text-[11px] disabled:opacity-40"
+                    >
+                      Export Selected CSV (${selectedIds.size})
+                    </button>
+                  </div>
+                </div>
+              </section>
+
+              <!-- Summary Telemetry Chart (With Deliberate 1-in-5 HTTP 500 Chaos Handling) -->
+              <${LiquidGlassSummaryChart}
+                summaryData=${summaryData}
+                summaryStatus=${summaryStatus}
+                summaryErrorMsg=${summaryErrorMsg}
+                metricKey=${chartMetric}
+                onMetricKeyChange=${setChartMetric}
+                failureRate=${failureRate}
+                onFailureRateChange=${setFailureRate}
+                onForce500=${() => loadSummaryChart(true)}
+                onRetry=${() => {
+                  mockApiTwin.forceNextSummary500 = false;
+                  const prevRate = mockApiTwin.summaryFailureRate;
+                  mockApiTwin.summaryFailureRate = 0;
+                  loadSummaryChart(false);
+                  mockApiTwin.summaryFailureRate = prevRate;
+                }}
+                lightMode=${lightMode}
+              />
+
+              <!-- Server-Side Data Table (10,500 Accounts, Stable Selection, Live Poll Deltas, 375px Responsive) -->
+              <section
+                aria-label="Accounts Usage Data Table"
+                className="liquid-glass-card rounded-3xl overflow-hidden"
+              >
+                <!-- Table Top Bar -->
+                <div className="px-4 sm:px-6 py-4 border-b border-white/10 flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h2 className="apple-display text-base sm:text-lg font-bold">
+                        Account Usage Ledger
+                      </h2>
+                      <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-semibold bg-white/10 text-cyan-300 tabular-nums">
+                        ${tableResp.total.toLocaleString()} matching accounts
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      Click any row or press <kbd className="px-1.5 py-0.5 rounded bg-white/10 font-mono text-[10px]">Enter</kbd> to open the 4-Step Settings Sheet. Row #2 has Step 4 pre-saved so you can test the Step 2 <code className="font-mono text-amber-300">billing_country</code> 422 trap immediately.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2 text-xs">
+                    <button
+                      type="button"
+                      onClick=${() => { tactile.tap(); setEditingAccountId(2); }}
+                      className="apple-press px-3 py-1.5 rounded-xl bg-amber-500/20 border border-amber-400/40 text-amber-200 font-semibold"
+                    >
+                      Inspect Account #2 (Step 4→2 Trap Demo)
+                    </button>
+                    <label htmlFor="page-size-select" className="text-slate-400">Rows:</label>
+                    <select
+                      id="page-size-select"
+                      value=${queryState.page_size}
+                      onChange=${(e) => updateFilter({ page_size: Number(e.target.value), page: 1 })}
+                      className="px-2.5 py-1.5 rounded-xl bg-slate-900/80 border border-white/15 text-white font-mono"
+                    >
+                      <option value="10">10</option>
+                      <option value="25">25</option>
+                      <option value="50">50</option>
+                      <option value="100">100</option>
+                      <option value="200">200</option>
+                    </select>
+                  </div>
+                </div>
+
+                ${tableResp.data.length === 0 ? html`
+                  <!-- Empty State -->
+                  <div className="p-12 text-center space-y-3">
+                    <div className="text-base font-bold text-slate-200">No accounts match your current filters</div>
+                    <p className="text-xs text-slate-400 max-w-md mx-auto">
+                      Try clearing your search query or expanding the signup date window. Your ${selectedIds.size} selected account(s) remain safely preserved in memory.
+                    </p>
+                    <button
+                      type="button"
+                      onClick=${() => {
+                        setSearchInput('');
+                        updateFilter({ search: '', status: '', country: '', plan: '', date_from: '2025-01-01', date_to: '2026-11-15' });
+                      }}
+                      className="apple-press px-4 py-2 rounded-2xl bg-cyan-400 text-slate-950 font-bold text-xs"
+                    >
+                      Reset All Filters
+                    </button>
+                  </div>
+                ` : html`
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="border-b border-white/10 text-[11px] font-semibold uppercase apple-micro text-slate-400 bg-white/[0.02]">
+                          <th className="py-3 pl-4 pr-2 w-10">
+                            <input
+                              type="checkbox"
+                              aria-label="Select all accounts on current page"
+                              checked=${tableResp.data.length > 0 && tableResp.data.every((r) => selectedIds.has(r.id))}
+                              onChange=${toggleSelectCurrentPage}
+                              className="rounded accent-cyan-400 cursor-pointer"
+                            />
+                          </th>
+                          ${[
+                            { key: 'id', label: 'ID' },
+                            { key: 'name', label: 'Account / Email' },
+                            { key: 'company', label: 'Company' },
+                            { key: 'country', label: 'Region' },
+                            { key: 'plan', label: 'Plan' },
+                            { key: 'status', label: 'Status' },
+                            { key: 'signup_date', label: 'Signup' },
+                            { key: 'current_month_minutes', label: 'Minutes (Mo)', align: 'right' },
+                            { key: 'current_month_sms', label: 'SMS (Mo)', align: 'right' },
+                            { key: 'cost_cents', label: 'Spend ($)', align: 'right' },
+                          ].map((col) => {
+                            const isSorted = queryState.sort_by === col.key;
+                            return html`
+                              <th
+                                key=${col.key}
+                                className=${`py-3 px-3 ${col.align === 'right' ? 'text-right' : 'text-left'}`}
+                              >
+                                <button
+                                  type="button"
+                                  onClick=${() => toggleSort(col.key)}
+                                  className=${`apple-press inline-flex items-center gap-1 hover:text-white ${
+                                    isSorted ? 'text-cyan-300 font-bold' : ''
+                                  }`}
+                                >
+                                  <span>${col.label}</span>
+                                  <span className="text-[10px]">
+                                    ${isSorted ? (queryState.sort_dir === 'asc' ? '↑' : '↓') : '↕'}
+                                  </span>
+                                </button>
+                              </th>
+                            `;
+                          })}
+                          <th className="py-3 pl-3 pr-4 text-right">Settings</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/5 text-xs">
+                        ${tableResp.data.map((row, idx) => {
+                          const isSelected = selectedIds.has(row.id);
+                          const isFocused = focusedRowIndex === idx;
+                          const drift = latestDrifts[row.id];
+                          const savedStepsCount = Object.keys(mockApiTwin.getAccountSettings(row.id)).length;
+                          return html`
+                            <tr
+                              key=${row.id}
+                              onClick=${() => setFocusedRowIndex(idx)}
+                              className=${`transition-colors ${
+                                drift ? 'drift-flash' : ''
+                              } ${
+                                isSelected
+                                  ? 'bg-cyan-500/12 hover:bg-cyan-500/18'
+                                  : isFocused
+                                  ? 'bg-white/[0.06]'
+                                  : 'hover:bg-white/[0.04]'
+                              }`}
+                            >
+                              <td className="py-3 pl-4 pr-2">
+                                <input
+                                  type="checkbox"
+                                  aria-label=${`Select account ${row.name}`}
+                                  checked=${isSelected}
+                                  onChange=${() => toggleSelectRow(row.id)}
+                                  onClick=${(e) => e.stopPropagation()}
+                                  className="rounded accent-cyan-400 cursor-pointer"
+                                />
+                              </td>
+                              <td className="py-3 px-3 font-mono font-bold text-slate-300 tabular-nums">
+                                #${row.id}
+                              </td>
+                              <td className="py-3 px-3">
+                                <div className="font-semibold text-white">${row.name}</div>
+                                <div className="text-[11px] text-slate-400 font-mono">${row.email}</div>
+                              </td>
+                              <td className="py-3 px-3 text-slate-200">${row.company}</td>
+                              <td className="py-3 px-3">
+                                <span className="px-2 py-0.5 rounded-lg liquid-pill font-mono text-[11px]">
+                                  ${row.country}
+                                </span>
+                              </td>
+                              <td className="py-3 px-3">
+                                <span className=${`px-2.5 py-0.5 rounded-full text-[11px] font-semibold capitalize ${
+                                  row.plan === 'enterprise'
+                                    ? 'bg-purple-500/20 text-purple-200 border border-purple-400/30'
+                                    : row.plan === 'pro'
+                                    ? 'bg-cyan-500/20 text-cyan-200 border border-cyan-400/30'
+                                    : 'bg-slate-500/20 text-slate-300 border border-slate-400/25'
+                                }`}>
+                                  ${row.plan}
+                                </span>
+                              </td>
+                              <td className="py-3 px-3">
+                                <span className=${`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold capitalize ${
+                                  row.status === 'active'
+                                    ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-400/30'
+                                    : row.status === 'trial'
+                                    ? 'bg-amber-500/15 text-amber-200 border border-amber-400/30'
+                                    : 'bg-rose-500/15 text-rose-300 border border-rose-400/30'
+                                }`}>
+                                  <span className=${`w-1.5 h-1.5 rounded-full ${
+                                    row.status === 'active' ? 'bg-emerald-400' : row.status === 'trial' ? 'bg-amber-400' : 'bg-rose-400'
+                                  }`}></span>
+                                  ${row.status}
+                                </span>
+                              </td>
+                              <td className="py-3 px-3 font-mono text-slate-300 tabular-nums">
+                                ${row.signup_date}
+                              </td>
+                              <td className="py-3 px-3 text-right font-mono tabular-nums">
+                                <span className="font-semibold text-white">${row.current_month_minutes.toLocaleString()}</span>
+                                ${drift && html`
+                                  <span className="ml-1.5 px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 text-[10px] font-bold">
+                                    +${drift.dMin}
+                                  </span>
+                                `}
+                              </td>
+                              <td className="py-3 px-3 text-right font-mono tabular-nums">
+                                <span>${row.current_month_sms.toLocaleString()}</span>
+                                ${drift && html`
+                                  <span className="ml-1.5 px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[10px] font-bold">
+                                    +${drift.dSms}
+                                  </span>
+                                `}
+                              </td>
+                              <td className="py-3 px-3 text-right font-mono font-bold text-cyan-300 tabular-nums">
+                                <span>${formatCents(row.cost_cents)}</span>
+                                ${drift && html`
+                                  <span className="ml-1.5 px-1.5 py-0.5 rounded bg-purple-500/25 text-purple-200 text-[10px]">
+                                    +${formatCents(drift.dCost)}
+                                  </span>
+                                `}
+                              </td>
+                              <td className="py-3 pl-3 pr-4 text-right">
+                                <button
+                                  type="button"
+                                  onClick=${(e) => {
+                                    e.stopPropagation();
+                                    tactile.tap();
+                                    setEditingAccountId(row.id);
+                                  }}
+                                  className="apple-press px-3 py-1.5 rounded-xl liquid-pill hover:bg-white/15 text-xs font-semibold inline-flex items-center gap-1.5"
+                                >
+                                  <span>Configure</span>
+                                  ${savedStepsCount > 0 && html`
+                                    <span className="px-1.5 py-0.2 rounded-full bg-cyan-500/25 text-cyan-200 font-mono text-[10px]">
+                                      ${savedStepsCount}/4
+                                    </span>
+                                  `}
+                                </button>
+                              </td>
+                            </tr>
+                          `;
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                `}
+
+                <!-- Pagination Footer -->
+                <div className="px-4 sm:px-6 py-3.5 border-t border-white/10 flex flex-wrap items-center justify-between gap-3 text-xs">
+                  <div className="text-slate-400 font-mono tabular-nums">
+                    Showing page <strong className="text-white">${queryState.page}</strong> of <strong className="text-white">${totalPages}</strong> (${tableResp.total.toLocaleString()} total records · ${selectedIds.size} selected across pages)
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      disabled=${queryState.page <= 1}
+                      onClick=${() => updateFilter({ page: 1 })}
+                      className="apple-press px-2.5 py-1.5 rounded-xl liquid-pill disabled:opacity-40 font-semibold"
+                    >
+                      « First
+                    </button>
+                    <button
+                      type="button"
+                      disabled=${queryState.page <= 1}
+                      onClick=${() => updateFilter({ page: queryState.page - 1 })}
+                      className="apple-press px-3 py-1.5 rounded-xl liquid-pill disabled:opacity-40 font-semibold"
+                    >
+                      ‹ Prev
+                    </button>
+                    <span className="px-3 py-1.5 rounded-xl bg-white/10 font-mono font-bold tabular-nums">
+                      ${queryState.page} / ${totalPages}
+                    </span>
+                    <button
+                      type="button"
+                      disabled=${queryState.page >= totalPages}
+                      onClick=${() => updateFilter({ page: queryState.page + 1 })}
+                      className="apple-press px-3 py-1.5 rounded-xl liquid-pill disabled:opacity-40 font-semibold"
+                    >
+                      Next ›
+                    </button>
+                    <button
+                      type="button"
+                      disabled=${queryState.page >= totalPages}
+                      onClick=${() => updateFilter({ page: totalPages })}
+                      className="apple-press px-2.5 py-1.5 rounded-xl liquid-pill disabled:opacity-40 font-semibold"
+                    >
+                      Last »
+                    </button>
+                  </div>
+                </div>
+              </section>
+            `}
+          </main>
+
+          <!-- Floating Cross-Page Selection Bar (Proves row selection stays 100% stable across pages & polls) -->
+          ${selectedIds.size > 0 && html`
+            <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-30 px-4 w-full max-w-xl">
+              <div className="liquid-glass-island rounded-2xl px-4 py-2.5 flex items-center justify-between gap-3 text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-cyan-400"></span>
+                  <span className="font-semibold">
+                    <strong className="font-mono text-cyan-300 tabular-nums">${selectedIds.size}</strong> account(s) pinned across pages &amp; background polls
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick=${exportSelectedCsv}
+                    className="apple-press px-3 py-1 rounded-xl bg-cyan-400 text-slate-950 font-bold"
+                  >
+                    Export CSV
+                  </button>
+                  <button
+                    type="button"
+                    onClick=${() => { tactile.tap(); setSelectedIds(new Set()); }}
+                    className="apple-press px-2.5 py-1 rounded-xl liquid-pill text-slate-300 hover:text-white"
+                  >
+                    Clear Selection
+                  </button>
+                </div>
+              </div>
+            </div>
+          `}
+
+          <!-- 4-Step Account Settings Sheet -->
+          ${editingAccount && html`
+            <${AccountSettingsSheet}
+              account=${editingAccount}
+              onClose=${() => setEditingAccountId(null)}
+              onAccountUpdated=${() => setTableResp(mockApiTwin.queryAccounts(queryState))}
+              reducedMotion=${reducedMotion}
+            />
+          `}
+        </div>
+      `;
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(React.createElement(App));
+  </script>
+</body>
+</html>

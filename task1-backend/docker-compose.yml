@@ -1,0 +1,51 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: callzo-postgres
+    environment:
+      POSTGRES_USER: callzo
+      POSTGRES_PASSWORD: callzo_secret_pw
+      POSTGRES_DB: callzo_metering
+    ports:
+      - "${POSTGRES_HOST_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U callzo -d callzo_metering"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: api
+    ports:
+      - "${API_HOST_PORT:-8000}:8000"
+    environment:
+      - DATABASE_URL=postgresql://callzo:callzo_secret_pw@postgres:5432/callzo_metering
+      - WEBHOOK_SECRET=callzo_test_secret_change_me
+      - ADMIN_API_KEY=callzo_admin_key_2026
+      - DEFAULT_MONTHLY_CAP_CENTS=2500
+      - LATE_EVENT_THRESHOLD_DAYS=30
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  simulator:
+    image: meetrj/callzo-webhook-simulator
+    platform: linux/arm64
+    container_name: simulator
+    depends_on:
+      api:
+        condition: service_healthy
+    command: ["--url", "http://api:8000/webhooks/calls", "--scenario", "all"]
+
+volumes:
+  pgdata:
