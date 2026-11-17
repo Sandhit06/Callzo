@@ -1,6 +1,5 @@
-# Callzo Engineering Assessment
-
-![Callzo dashboard screenshot](/immg.png)
+<h1 align="center">Callzo Engineering Assessment</h1>
+<img width="1774" height="887" alt="Callzo Usage Analytics Console" src="https://github.com/user-attachments/assets/3ce6909a-9378-4674-91de-64d44963dfef" />
 
 ## System architecture
 
@@ -14,6 +13,8 @@ Callzo contains two independent assessment applications. They share this reposit
 | Persistence / data | PostgreSQL in Compose; SQLite adapter locally and in tests (`app/database.py`) | Supplied mock Usage API; no shared Task 1 storage |
 | Runtime support | Retry/reconciliation worker; health and Prometheus metrics | Vite proxy in development; Nginx reverse proxy in Compose |
 | Tests | `pytest` against isolated SQLite test DB | No unit test runner configured; use `npm run build` to verify compilation |
+
+![Callzo dashboard screenshot](/immg.png)
 
 ### End-to-end flows
 
