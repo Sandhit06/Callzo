@@ -1,5 +1,68 @@
 # Callzo Engineering Assessment
 
+![Callzo dashboard screenshot](docs/images/callzo-dashboard.png)
+
+## System architecture
+
+Callzo contains two independent assessment applications. They share this repository, but Task 2 does not use Task 1's API or database.
+
+| Layer | Task 1: usage metering backend | Task 2: usage admin console |
+|---|---|---|
+| Entry point | FastAPI webhook and admin routes (`app/main.py`) | React single-page application (`src/App.jsx`) |
+| Validation / routing | HMAC verification on raw webhook bytes; strict schemas; API-key admin auth | URL query state for search, filters, sorting, dates, pagination; API requests use `/api/*` |
+| Core logic | Idempotent event processing, call lifecycle handling, integer-cent caps, retries, reconciliation (`app/services.py`) | Directory, selections, usage summaries and SVG prism, settings drawer, themes and error/loading states |
+| Persistence / data | PostgreSQL in Compose; SQLite adapter locally and in tests (`app/database.py`) | Supplied mock Usage API; no shared Task 1 storage |
+| Runtime support | Retry/reconciliation worker; health and Prometheus metrics | Vite proxy in development; Nginx reverse proxy in Compose |
+| Tests | `pytest` against isolated SQLite test DB | No unit test runner configured; use `npm run build` to verify compilation |
+
+### End-to-end flows
+
+```mermaid
+flowchart LR
+  subgraph T1[Task 1 — independent backend]
+    SIM[Webhook simulator / sender] -->|raw JSON + HMAC signature| API[FastAPI ingress]
+    API --> VAL[Signature verification + strict schema validation]
+    VAL --> SVC[Metering and call lifecycle services]
+    SVC --> RAW[(Immutable raw event log)]
+    SVC --> CALL[(Call session state)]
+    SVC --> LEDGER[(Monthly usage ledger)]
+    WORKER[Retry + reconciliation worker] <--> SVC
+    SVC --> DB[(PostgreSQL in Compose / SQLite locally)]
+    RAW -. stored in .-> DB
+    CALL -. stored in .-> DB
+    LEDGER -. stored in .-> DB
+    ADMIN[Admin client] -->|API key| API
+    API --> OPS[Health, OpenAPI docs, Prometheus metrics]
+  end
+  subgraph T2[Task 2 — independent frontend]
+    USER[Browser] --> SPA[React console]
+    SPA -->|same-origin /api requests| PROXY{Vite in dev / Nginx in Compose}
+    PROXY --> MOCK[Mock Usage API container]
+    MOCK --> DATA[Accounts, summaries, settings]
+    DATA --> PROXY
+    PROXY --> SPA
+  end
+```
+
+For Task 1, raw request bytes are authenticated before JSON parsing. Validated events enter transactional business logic; unique event IDs protect against duplicate delivery while call IDs reconcile lifecycle ordering. The event log is the audit source, and the monthly ledger is a derived, integer-based read model. Background work handles retries and repairs drift by comparing derived usage with raw events.
+
+For Task 2, the browser loads the SPA from Vite or Nginx and sends requests to its own `/api` path. Vite forwards those requests to `localhost:8001` during host development; Nginx forwards to `mock-api:8001` over the Compose network. URL state is shareable; selections, theme, and in-progress settings are client state; account and usage data remain owned by the mock API.
+
+### Runtime boundaries
+
+```text
+Task 1 Compose: simulator → FastAPI → PostgreSQL (named pgdata volume)
+                           ↘ retry/reconciliation worker ↗
+
+Task 2 Compose: browser → local frontend container (built from this source)
+                         → Nginx /api proxy → mock-api container
+
+Task 1 host development: FastAPI → SQLite file
+Task 2 host development: Vite → mock API container
+```
+
+These boundaries let each task run and be evaluated independently. Docker service names are only resolvable inside their Compose network; browser code always calls the frontend origin. See the task READMEs for component maps, setup steps, API details, and test commands.
+
 This repository contains two independent assessment projects:
 
 - `task1-backend/`: FastAPI call usage metering API with PostgreSQL support.
@@ -8,12 +71,12 @@ This repository contains two independent assessment projects:
 
 ## Choose how to run
 
-| Project | Run from source | Full assessment stack |
-|---|---|---|
-| Task 1 backend | Python 3.12 + SQLite; no Docker required | Docker Compose + PostgreSQL + webhook simulator |
-| Task 2 frontend | Vite source app; the supplied mock API still needs Docker | Vite source app + mock API container |
+| Project         | Run from source                                           | Full assessment stack                           |
+| --------------- | --------------------------------------------------------- | ----------------------------------------------- |
+| Task 1 backend  | Python 3.12 + SQLite; no Docker required                  | Docker Compose + PostgreSQL + webhook simulator |
+| Task 2 frontend | Vite source app; the supplied mock API still needs Docker | Vite source app + mock API container            |
 
-For either Docker option, start Docker Desktop and wait until its **Linux engine** is running. If Docker reports that it cannot connect to `dockerDesktopLinuxEngine`, the daemon is not running yet. The supplied `meetrj` simulator and mock API images are published for `linux/arm64`; their Compose services request that platform explicitly so Docker Desktop can run them using its ARM emulation support on an x64 Windows machine.
+For either Docker option, start Docker Desktop and wait until its **Linux engine** is running. If Docker reports that it cannot connect to `dockerDesktopLinuxEngine`, the Docker daemon is not running yet.
 
 ## Run Task 1 locally
 
@@ -42,39 +105,18 @@ cd task1-backend
 docker compose up --build
 ```
 
-The API is at `http://localhost:8000`; the simulator sends all assessment scenarios automatically. Press `Ctrl+C` to stop the stack. If you are in `task1-backend` and want to switch projects, run `cd ..` first, then `cd task2-frontend`.
-
-The default host ports are `5432` (PostgreSQL) and `8000` (API). If another local project already uses either port, set alternate host ports before starting Compose; the values below use `5433` and `8002`:
-
-```powershell
-$env:POSTGRES_HOST_PORT = '5433'
-$env:API_HOST_PORT = '8002'
-docker compose up --build
-```
-
-Then use `http://localhost:8002/health` and `http://localhost:8002/docs`. These variables affect only the Windows host ports; services inside the Compose network continue to use PostgreSQL port `5432` and API port `8000`.
+The API is at `http://localhost:8000`; the simulator sends all assessment scenarios automatically. Press `Ctrl+C` to stop the stack. When the prompt already ends in `\task1-backend>`, do not run `cd task1-backend` again; use `cd ..\task2-frontend` to move to the other project.
 
 ## Run Task 2 locally
 
 The React app can run from source with Node.js 20 or newer. The provided mock API is a Docker image, so Docker Desktop must be running for live account data.
 
-The `mock-api` service exists only in `task2-frontend/docker-compose.yml`. In PowerShell, from the repository root, start it with:
+In PowerShell, from the repository root, start the mock API:
 
 ```powershell
 cd task2-frontend
 docker compose up -d mock-api
 ```
-
-If your prompt is currently in `task1-backend`, move to the repository root before entering the frontend folder:
-
-```powershell
-cd ..
-cd task2-frontend
-docker compose config --services
-docker compose up -d mock-api
-```
-
-The service list should include `mock-api` and `frontend`. If it does not, check that the prompt path ends in `task2-frontend` before running Compose.
 
 In a second PowerShell window, also starting at the repository root, run the frontend source:
 

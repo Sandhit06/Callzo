@@ -1,28 +1,97 @@
-# Callzo Usage Admin Console
+# Task 2 — Callzo Usage Admin Console
 
-React 18 and Tailwind CSS frontend for the Task 2 mock Usage API. The summary graphic uses accessible native SVG, so the project needs no chart dependency.
+An account usage dashboard built with React 18 and Vite. It combines server-driven account management with an accessible, dimensional SVG usage visualization and an Apple-inspired liquid-glass interface.
 
-## Run
+## System architecture
 
-From this folder, run `docker compose up`. Compose starts the published frontend image and the mock API; open http://localhost:3000. The frontend container uses Nginx to proxy `/api/*` to `http://mock-api:8001/*`. Compose intentionally references an image only, as required by the assessment. Build and push the current source as `sandhit06/callzo-task2-frontend:latest` before submitting a changed version.
+```mermaid
+flowchart LR
+  USER[Browser user] --> APP[React application]
+  APP -->|/api/* same-origin requests| PROXY{Development or production proxy}
+  PROXY -->|Vite proxy in dev| MOCK[Provided mock Usage API :8001]
+  PROXY -->|Nginx proxy in Compose| MOCK
+  APP --> URL[URL query state]
+  APP --> LOCAL[Local UI state: selection, theme, drafts]
+  MOCK --> DATA[10,500 mock accounts + usage summaries]
+```
 
-The supplied mock API is published for `linux/arm64`, so Compose requests that platform explicitly. Docker Desktop on x64 Windows uses ARM emulation to run it; the frontend image uses the host's default platform.
+In local development, Vite serves the SPA on port 3000 and proxies `/api` to `localhost:8001`. In Compose, the multi-stage Dockerfile builds the React bundle and Nginx serves it on port 3000; Nginx forwards `/api/*` to the `mock-api` service over the Compose network. The browser never needs to resolve a Docker-only service name. Account lists, summaries, and saved settings come from the API; filters, sorting, dates, and pagination are encoded in the URL; selected account IDs, theme, and unsaved edits are UI state.
 
-For local source development, run `npm install`, `npm run dev`, and open http://localhost:3000. Vite proxies API requests to `http://localhost:8001`.
+## Repository structure
 
-## Behavior
+```text
+task2-frontend/
+├── src/
+│   ├── App.jsx          # Dashboard, data requests, filters, chart, settings drawer
+│   ├── index.css        # Liquid-glass styling, responsive and accessibility states
+│   └── main.jsx         # React root and stylesheet entry
+├── public/favicon.svg   # Custom Callzo glass C icon
+├── index.html           # Document metadata and favicon link
+├── vite.config.js        # Local server and API proxy
+├── nginx.conf            # Production SPA fallback and API reverse proxy
+├── Dockerfile            # Build stage + Nginx runtime
+├── docker-compose.yml    # Local source build and mock API service
+├── package.json          # npm scripts and dependency manifest
+└── README.md             # Task-specific guide
+```
 
-- Server-side search, status/plan/country filters, sorting, page size and pagination are reflected in URL query parameters. The date range drives both the account list and summary request without navigation.
-- Selections are a client-side set of immutable account IDs and survive filtering, paging, sorting, and background refreshes.
-- Account rows refresh every 15 seconds. Requests are latest-wins; refresh errors keep the last successful rows visible and show a retry notice.
-- The usage prism has independent loading, empty, error, stale-data and retry states. Its isometric bars aggregate longer date ranges into readable periods; minutes, SMS and spend can be switched in place, and bars support hover, keyboard focus, arrow-key movement and selection. The mock API's intermittent failure does not block the table.
-- Settings load saved steps from the API. Fields save on blur and steps save before navigation. Server validation is shown on its returned step. The deliberate Step 4 then Step 2 rejection is explained inline; saved values and other drafts remain intact, and submitting can continue with the previously accepted Step 2 snapshot.
-- The drawer supports Escape, focus return, a keyboard focus trap, labelled controls, and responsive layout down to 375px. Glass surfaces honor reduced motion, reduced transparency and higher contrast preferences.
+## Requirements and installation
 
-## State choices
+- Node.js 20 or newer with npm.
+- Docker Desktop with the Linux engine for live mock data. The supplied mock API image is ARM64; Compose selects ARM64 so Docker Desktop can emulate it on x64 hosts.
 
-URL state holds filters, date range, sort and pagination so the view can be shared and refreshed. The API is the source of truth for account rows, summaries and saved settings. React state holds selection and in-progress settings drafts; selections use IDs so refetches do not clear them.
+From this directory:
 
-## Trade-offs
+```powershell
+npm ci
+```
 
-The table uses server pagination instead of downloading and virtualizing all 10,500 records. The settings drawer keeps a small local draft rather than adding a form library. The usage prism is custom SVG rather than a full 3D/WebGL engine: it gives the data dimensional facets and accessible interaction without introducing another dependency or making the console heavy.
+Start the mock service in one terminal:
+
+```powershell
+docker compose up -d mock-api
+Invoke-RestMethod http://localhost:8001/health
+```
+
+Start the frontend in another terminal:
+
+```powershell
+npm run dev
+```
+
+Visit `http://localhost:3000`. Vite forwards `/api/*` calls to `localhost:8001`. Stop the dev server with `Ctrl+C`; stop the API with `docker compose stop mock-api`.
+
+## Full local Docker development
+
+Compose builds the frontend from the current working tree, so source edits appear after rebuilding (the published frontend image is not used):
+
+```powershell
+docker compose up --build -d
+docker compose ps
+docker compose logs -f frontend mock-api
+```
+
+Open `http://localhost:3000`. Nginx serves the app and proxies API requests to `mock-api:8001` inside the Compose network. Stop and remove the local stack with `docker compose down`. Default host ports are `3000` and `8001`; change the port mappings in `docker-compose.yml` if either is occupied.
+
+## Tests and build verification
+
+There is currently no frontend unit-test framework or `test` script configured. Do not interpret a successful production build as a unit-test run. Check production compilation with:
+
+```powershell
+npm run build
+```
+
+Optionally preview the built assets with `npm run preview` at `http://localhost:3000`. When adding tests, add a runner and a documented npm test script to `package.json`.
+
+## Features and interaction model
+
+- Search, status/plan/country filters, sorting, page size, pagination, and date range are shareable through URL query parameters.
+- Page selections are keyed by stable account IDs and persist through sorting, pagination, and refresh.
+- Account rows refresh every 15 seconds; latest-request-wins behavior prevents stale requests from overwriting newer filters.
+- The interactive 3D-style usage prism supports minutes, SMS, and spend, keyboard navigation, hover/focus selection, range aggregation, and explicit loading/error/empty/stale states.
+- Account settings use a multi-step drawer with validation, autosave, keyboard focus management, Escape-to-close, and clear server feedback.
+- Dark/light appearances, responsive layouts, reduced-motion, reduced-transparency, and higher-contrast preferences are supported.
+
+## Design and implementation notes
+
+The chart is native SVG rather than WebGL: facets and shadows create depth while preserving fast rendering and keyboard accessibility. The design uses layered translucent materials, restrained highlights, and purposeful interaction feedback. Filters and navigation live in the URL, API data remains server-owned, and drafts and selection are local UI state.
