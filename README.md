@@ -1,6 +1,6 @@
 # Callzo Engineering Assessment
 
-![Callzo dashboard screenshot](docs/images/callzo-dashboard.png)
+![Callzo dashboard screenshot](/immg.png)
 
 ## System architecture
 
